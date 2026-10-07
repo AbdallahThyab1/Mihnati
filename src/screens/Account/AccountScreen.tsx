@@ -152,7 +152,9 @@ export default function AccountScreen() {
             {
               text: 'استكشاف الخدمات',
               onPress: () =>
-                router.push('/results'),
+                router.push(
+                  '/results',
+                ),
             },
             {
               text: 'إغلاق',
@@ -163,21 +165,7 @@ export default function AccountScreen() {
         break;
 
       case 'history':
-        Alert.alert(
-          'سجل الطلبات',
-          'لا توجد طلبات سابقة حتى الآن.',
-          [
-            {
-              text: 'البحث عن خدمة',
-              onPress: () =>
-                router.push('/results'),
-            },
-            {
-              text: 'إغلاق',
-              style: 'cancel',
-            },
-          ],
-        );
+        router.push('/bookings');
         break;
 
       case 'location':
@@ -217,19 +205,19 @@ export default function AccountScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View
+      style={styles.screen}
+    >
       <AppHeader />
 
       <ScrollView
         contentContainerStyle={
           styles.content
         }
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-        {/* =================================================
-            ACCOUNT HEADER
-        ================================================= */}
-
         <View
           style={[
             styles.profileCard,
@@ -237,14 +225,18 @@ export default function AccountScreen() {
           ]}
         >
           <View
-            style={styles.profileTop}
+            style={
+              styles.profileTop
+            }
           >
             <View
               style={styles.avatar}
             >
               <User
                 size={30}
-                color={colors.white}
+                color={
+                  colors.white
+                }
               />
             </View>
 
@@ -295,12 +287,10 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* =================================================
-            QUICK ACTIONS
-        ================================================= */}
-
         <View
-          style={styles.quickSection}
+          style={
+            styles.quickSection
+          }
         >
           <Txt
             variant="h4"
@@ -321,7 +311,9 @@ export default function AccountScreen() {
                 styles.quickCard
               }
               onPress={() =>
-                router.push('/map')
+                router.push(
+                  '/map',
+                )
               }
             >
               <View
@@ -359,7 +351,9 @@ export default function AccountScreen() {
                 styles.quickCard
               }
               onPress={() =>
-                router.push('/results')
+                router.push(
+                  '/results',
+                )
               }
             >
               <View
@@ -394,17 +388,15 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* =================================================
-            JOIN AS PROVIDER
-        ================================================= */}
-
         <Pressable
           style={[
             styles.providerBanner,
             shadows.level1,
           ]}
           onPress={() =>
-            router.push('/join')
+            router.push(
+              '/join',
+            )
           }
         >
           <View
@@ -414,7 +406,9 @@ export default function AccountScreen() {
           >
             <UserPlus
               size={22}
-              color={colors.white}
+              color={
+                colors.white
+              }
             />
           </View>
 
@@ -425,7 +419,9 @@ export default function AccountScreen() {
           >
             <Txt
               variant="h4"
-              color={colors.white}
+              color={
+                colors.white
+              }
             >
               عندك مهنة أو نشاط؟
             </Txt>
@@ -443,16 +439,16 @@ export default function AccountScreen() {
 
           <ArrowLeft
             size={21}
-            color={colors.white}
+            color={
+              colors.white
+            }
           />
         </Pressable>
 
-        {/* =================================================
-            MENU
-        ================================================= */}
-
         <View
-          style={styles.menuSection}
+          style={
+            styles.menuSection
+          }
         >
           <Txt
             variant="h4"
@@ -464,93 +460,95 @@ export default function AccountScreen() {
           </Txt>
 
           <View>
-            {items.map((item) => (
-              <Pressable
-                key={item.id}
-                style={({ pressed }) => [
-                  styles.item,
-                  pressed &&
-                  styles.itemPressed,
-                ]}
-                onPress={() =>
-                  handleItemPress(
-                    item.id,
-                  )
-                }
-              >
-                <View
-                  style={
-                    styles.itemIcon
-                  }
-                >
-                  {item.icon}
-                </View>
-
-                <View
-                  style={
-                    styles.itemContent
+            {items.map(
+              (item) => (
+                <Pressable
+                  key={item.id}
+                  style={({
+                    pressed,
+                  }) => [
+                      styles.item,
+                      pressed &&
+                      styles.itemPressed,
+                    ]}
+                  onPress={() =>
+                    handleItemPress(
+                      item.id,
+                    )
                   }
                 >
                   <View
                     style={
-                      styles.itemTitleRow
+                      styles.itemIcon
                     }
                   >
-                    <Txt
-                      variant="h4"
-                      style={
-                        styles.itemTitle
-                      }
-                    >
-                      {item.label}
-                    </Txt>
-
-                    {item.badge && (
-                      <View
-                        style={
-                          styles.badge
-                        }
-                      >
-                        <Txt
-                          variant="labelSm"
-                          weight="700"
-                          color={
-                            colors.primary
-                          }
-                        >
-                          {item.badge}
-                        </Txt>
-                      </View>
-                    )}
+                    {item.icon}
                   </View>
 
-                  <Txt
-                    variant="small"
+                  <View
+                    style={
+                      styles.itemContent
+                    }
+                  >
+                    <View
+                      style={
+                        styles.itemTitleRow
+                      }
+                    >
+                      <Txt
+                        variant="h4"
+                        style={
+                          styles.itemTitle
+                        }
+                      >
+                        {item.label}
+                      </Txt>
+
+                      {item.badge && (
+                        <View
+                          style={
+                            styles.badge
+                          }
+                        >
+                          <Txt
+                            variant="labelSm"
+                            weight="700"
+                            color={
+                              colors.primary
+                            }
+                          >
+                            {
+                              item.badge
+                            }
+                          </Txt>
+                        </View>
+                      )}
+                    </View>
+
+                    <Txt
+                      variant="small"
+                      color={
+                        colors.muted
+                      }
+                      numberOfLines={
+                        2
+                      }
+                    >
+                      {item.hint}
+                    </Txt>
+                  </View>
+
+                  <ChevronLeft
+                    size={20}
                     color={
                       colors.muted
                     }
-                    numberOfLines={
-                      2
-                    }
-                  >
-                    {item.hint}
-                  </Txt>
-                </View>
-
-                <ChevronLeft
-                  size={20}
-                  color={
-                    colors.muted
-                  }
-                />
-              </Pressable>
-            ))}
+                  />
+                </Pressable>
+              ),
+            )}
           </View>
         </View>
-
-        {/* =================================================
-            APP INFO
-        ================================================= */}
 
         <View
           style={
@@ -621,10 +619,6 @@ export default function AccountScreen() {
   );
 }
 
-/* =========================================================
-   STYLES
-========================================================= */
-
 const styles =
   StyleSheet.create({
     screen: {
@@ -634,269 +628,162 @@ const styles =
     },
 
     content: {
-      padding:
-        16,
-
-      paddingBottom:
-        36,
+      padding: 16,
+      paddingBottom: 36,
     },
-
-    /* =====================================================
-       PROFILE
-    ===================================================== */
 
     profileCard: {
       backgroundColor:
         colors.primary,
-
       borderRadius:
         radius.xl,
-
-      padding:
-        18,
+      padding: 18,
     },
 
     profileTop: {
       ...row,
-
       alignItems:
         'center',
     },
 
     avatar: {
-      width:
-        62,
-
-      height:
-        62,
-
-      borderRadius:
-        31,
-
+      width: 62,
+      height: 62,
+      borderRadius: 31,
       backgroundColor:
         'rgba(255,255,255,0.14)',
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
     },
 
     profileInfo: {
-      flex:
-        1,
-
-      marginRight:
-        14,
+      flex: 1,
+      marginRight: 14,
     },
 
     profileTitle: {
       color:
         colors.white,
-
-      marginBottom:
-        4,
+      marginBottom: 4,
     },
 
     profileDescription: {
-      lineHeight:
-        20,
+      lineHeight: 20,
     },
 
     accountStatus: {
       flexDirection:
         'row',
-
       alignItems:
         'center',
-
       alignSelf:
         'flex-start',
-
-      marginTop:
-        14,
-
-      paddingHorizontal:
-        11,
-
-      paddingVertical:
-        7,
-
+      marginTop: 14,
+      paddingHorizontal: 11,
+      paddingVertical: 7,
       borderRadius:
         radius.full,
-
       backgroundColor:
         'rgba(255,255,255,0.10)',
     },
 
     statusDot: {
-      width:
-        7,
-
-      height:
-        7,
-
-      borderRadius:
-        4,
-
+      width: 7,
+      height: 7,
+      borderRadius: 4,
       backgroundColor:
         colors.success,
-
-      marginRight:
-        7,
+      marginRight: 7,
     },
 
-    /* =====================================================
-       SECTION
-    ===================================================== */
-
     quickSection: {
-      marginTop:
-        22,
+      marginTop: 22,
     },
 
     menuSection: {
-      marginTop:
-        22,
+      marginTop: 22,
     },
 
     sectionTitle: {
-      marginBottom:
-        11,
+      marginBottom: 11,
     },
-
-    /* =====================================================
-       QUICK ACTIONS
-    ===================================================== */
 
     quickActions: {
       flexDirection:
         'row',
-
-      gap:
-        10,
+      gap: 10,
     },
 
     quickCard: {
-      flex:
-        1,
-
+      flex: 1,
       backgroundColor:
         colors.white,
-
       borderRadius:
         radius.lg,
-
-      padding:
-        14,
-
-      borderWidth:
-        1,
-
+      padding: 14,
+      borderWidth: 1,
       borderColor:
         colors.border,
     },
 
     quickIcon: {
-      width:
-        40,
-
-      height:
-        40,
-
+      width: 40,
+      height: 40,
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.tintStrong,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
-      marginBottom:
-        9,
+      marginBottom: 9,
     },
 
-    /* =====================================================
-       PROVIDER BANNER
-    ===================================================== */
-
     providerBanner: {
-      marginTop:
-        14,
-
+      marginTop: 14,
       flexDirection:
         'row',
-
       alignItems:
         'center',
-
       backgroundColor:
         colors.secondary,
-
       borderRadius:
         radius.xl,
-
-      padding:
-        15,
+      padding: 15,
     },
 
     providerIcon: {
-      width:
-        44,
-
-      height:
-        44,
-
-      borderRadius:
-        14,
-
+      width: 44,
+      height: 44,
+      borderRadius: 14,
       backgroundColor:
         'rgba(255,255,255,0.14)',
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
     },
 
     providerText: {
-      flex:
-        1,
-
-      marginHorizontal:
-        12,
+      flex: 1,
+      marginHorizontal: 12,
     },
 
     providerHint: {
-      marginTop:
-        3,
-
-      lineHeight:
-        19,
+      marginTop: 3,
+      lineHeight: 19,
     },
-
-    /* =====================================================
-       MENU
-    ===================================================== */
 
     item: {
       ...card,
       ...row,
-
       alignItems:
         'center',
-
-      padding:
-        13,
-
-      marginBottom:
-        9,
+      padding: 13,
+      marginBottom: 9,
     },
 
     itemPressed: {
@@ -905,141 +792,86 @@ const styles =
     },
 
     itemIcon: {
-      width:
-        43,
-
-      height:
-        43,
-
+      width: 43,
+      height: 43,
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.tintStrong,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
     },
 
     itemContent: {
-      flex:
-        1,
-
-      marginHorizontal:
-        12,
-
-      minWidth:
-        0,
+      flex: 1,
+      marginHorizontal: 12,
+      minWidth: 0,
     },
 
     itemTitleRow: {
       flexDirection:
         'row',
-
       alignItems:
         'center',
     },
 
     itemTitle: {
-      fontSize:
-        15,
-
-      flex:
-        0,
+      fontSize: 15,
+      flex: 0,
     },
 
     badge: {
-      minWidth:
-        22,
-
-      height:
-        22,
-
-      borderRadius:
-        11,
-
-      marginLeft:
-        7,
-
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      marginLeft: 7,
       backgroundColor:
         colors.tintStrong,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
-      paddingHorizontal:
-        6,
+      paddingHorizontal: 6,
     },
 
-    /* =====================================================
-       APP INFO
-    ===================================================== */
-
     appInfoCard: {
-      marginTop:
-        12,
-
+      marginTop: 12,
       flexDirection:
         'row',
-
       alignItems:
         'center',
-
       backgroundColor:
         colors.white,
-
       borderRadius:
         radius.lg,
-
-      padding:
-        12,
-
-      borderWidth:
-        1,
-
+      padding: 12,
+      borderWidth: 1,
       borderColor:
         colors.border,
     },
 
     appInfoIcon: {
-      width:
-        36,
-
-      height:
-        36,
-
+      width: 36,
+      height: 36,
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.tintStrong,
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
     },
 
     appInfoContent: {
-      flex:
-        1,
-
-      marginHorizontal:
-        10,
+      flex: 1,
+      marginHorizontal: 10,
     },
 
     footer: {
-      marginTop:
-        22,
-
-      lineHeight:
-        19,
+      marginTop: 22,
+      lineHeight: 19,
     },
   });

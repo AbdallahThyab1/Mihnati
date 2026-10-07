@@ -1,7 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, {
+  useMemo,
+  useState,
+} from 'react';
 
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,17 +18,12 @@ import {
 
 import { useRouter } from 'expo-router';
 
-import { LinearGradient } from 'expo-linear-gradient';
-
 import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
   BriefcaseBusiness,
   Check,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   CircleCheck,
   Clock3,
   Contact,
@@ -53,7 +52,6 @@ import {
   fontFamilies,
   radius,
   row,
-  shadows,
 } from '../../styles/theme';
 
 /* =========================================================
@@ -244,22 +242,17 @@ function FieldCard({
   children,
 }: FieldCardProps) {
   return (
-    <View
-      style={[
-        styles.card,
-        shadows.level1,
-      ]}
-    >
-      <View
-        style={[
-          styles.cardHeading,
-        ]}
-      >
-        {icon}
+    <View style={styles.card}>
+      <View style={styles.cardHeading}>
+        <View style={styles.cardIcon}>
+          {icon}
+        </View>
 
         <Txt
           variant="h4"
-          style={styles.cardHeadingText}
+          style={
+            styles.cardHeadingText
+          }
         >
           {title}
 
@@ -317,9 +310,7 @@ export default function JoinScreen() {
     useState(true);
 
   const [fee, setFee] =
-    useState(
-      '30 - 50 شيكل',
-    );
+    useState('30 - 50 شيكل');
 
   const [area, setArea] =
     useState('الماصيون');
@@ -350,10 +341,52 @@ export default function JoinScreen() {
   const specialtyOptions = useMemo(
     () =>
       specialtiesByCategory[
-      category
+        category
       ] ?? [],
     [category],
   );
+
+  /* =======================================================
+     HELPERS
+  ======================================================= */
+
+  const getStepTitle = () => {
+    switch (step) {
+      case 1:
+        return 'معلومات النشاط';
+
+      case 2:
+        return 'الخدمات والتخصصات';
+
+      case 3:
+        return 'الموقع وساعات العمل';
+
+      case 4:
+        return 'راجع بيانات نشاطك';
+
+      default:
+        return '';
+    }
+  };
+
+  const getStepDescription = () => {
+    switch (step) {
+      case 1:
+        return 'أدخل المعلومات الأساسية التي سيشاهدها الزبائن.';
+
+      case 2:
+        return 'اختر المجال والخدمات التي تقدمها.';
+
+      case 3:
+        return 'حدد منطقة عملك وأوقات تواجدك.';
+
+      case 4:
+        return 'تأكد من المعلومات قبل إكمال الملف.';
+
+      default:
+        return '';
+    }
+  };
 
   /* =======================================================
      CATEGORY CHANGE
@@ -366,7 +399,7 @@ export default function JoinScreen() {
 
     const options =
       specialtiesByCategory[
-      nextCategory
+        nextCategory
       ] ?? [];
 
     setSelectedSpecialties(
@@ -385,13 +418,13 @@ export default function JoinScreen() {
       (current) =>
         current.includes(value)
           ? current.filter(
-            (item) =>
-              item !== value,
-          )
+              (item) =>
+                item !== value,
+            )
           : [
-            ...current,
-            value,
-          ],
+              ...current,
+              value,
+            ],
     );
   };
 
@@ -399,86 +432,84 @@ export default function JoinScreen() {
      VALIDATION
   ======================================================= */
 
-  const validateStep =
-    (
-      currentStep: Step,
-    ) => {
-      if (
-        currentStep === 1 &&
-        !shopName.trim()
-      ) {
-        Alert.alert(
-          'بيانات ناقصة',
-          'اكتب اسم المهني أو المحل أولاً.',
-        );
+  const validateStep = (
+    currentStep: Step,
+  ) => {
+    if (
+      currentStep === 1 &&
+      !shopName.trim()
+    ) {
+      Alert.alert(
+        'بيانات ناقصة',
+        'اكتب اسم المهني أو المحل أولاً.',
+      );
 
-        return false;
-      }
+      return false;
+    }
 
-      if (
-        currentStep === 1 &&
-        phone.trim().length <
-        7
-      ) {
-        Alert.alert(
-          'رقم الهاتف',
-          'أدخل رقم هاتف صالح للتواصل.',
-        );
+    if (
+      currentStep === 1 &&
+      phone.trim().length < 7
+    ) {
+      Alert.alert(
+        'رقم الهاتف',
+        'أدخل رقم هاتف صالح للتواصل.',
+      );
 
-        return false;
-      }
+      return false;
+    }
 
-      if (
-        currentStep === 2 &&
-        !category
-      ) {
-        Alert.alert(
-          'التصنيف',
-          'اختر التصنيف المهني الرئيسي.',
-        );
+    if (
+      currentStep === 2 &&
+      !category
+    ) {
+      Alert.alert(
+        'التصنيف',
+        'اختر التصنيف المهني الرئيسي.',
+      );
 
-        return false;
-      }
+      return false;
+    }
 
-      if (
-        currentStep === 2 &&
-        selectedSpecialties.length ===
+    if (
+      currentStep === 2 &&
+      selectedSpecialties.length ===
         0
-      ) {
-        Alert.alert(
-          'الخدمات',
-          'اختر خدمة واحدة على الأقل.',
-        );
+    ) {
+      Alert.alert(
+        'الخدمات',
+        'اختر خدمة واحدة على الأقل.',
+      );
 
-        return false;
-      }
+      return false;
+    }
 
-      if (
-        currentStep === 3 &&
-        !area
-      ) {
-        Alert.alert(
-          'الموقع',
-          'اختر المنطقة التي تعمل فيها.',
-        );
+    if (
+      currentStep === 3 &&
+      !area
+    ) {
+      Alert.alert(
+        'الموقع',
+        'اختر المنطقة التي تعمل فيها.',
+      );
 
-        return false;
-      }
+      return false;
+    }
 
-      if (
-        currentStep === 4 &&
-        !agreed
-      ) {
-        Alert.alert(
-          'التأكيد',
-          'يرجى تأكيد صحة البيانات قبل المتابعة.',
-        );
+    if (
+      currentStep === 4 &&
+      !agreed
+    ) {
+      Alert.alert(
+        'التأكيد',
+        'يرجى تأكيد صحة البيانات قبل المتابعة.',
+      );
 
-        return false;
-      }
+      return false;
+    }
 
-      return true;
-    };
+    return true;
+  };
 
   /* =======================================================
      NEXT / PREVIOUS
@@ -492,8 +523,7 @@ export default function JoinScreen() {
     if (step < 4) {
       setStep(
         (current) =>
-          (current +
-            1) as Step,
+          (current + 1) as Step,
       );
     }
   };
@@ -502,8 +532,7 @@ export default function JoinScreen() {
     if (step > 1) {
       setStep(
         (current) =>
-          (current -
-            1) as Step,
+          (current - 1) as Step,
       );
     }
   };
@@ -528,29 +557,6 @@ export default function JoinScreen() {
         },
       ],
     );
-  };
-
-  /* =======================================================
-     STEP TITLE
-  ======================================================= */
-
-  const getStepTitle = () => {
-    switch (step) {
-      case 1:
-        return 'معلومات النشاط الأساسية';
-
-      case 2:
-        return 'الخدمات والتخصصات';
-
-      case 3:
-        return 'الموقع وساعات العمل';
-
-      case 4:
-        return 'راجع بيانات نشاطك';
-
-      default:
-        return '';
-    }
   };
 
   /* =======================================================
@@ -583,16 +589,8 @@ export default function JoinScreen() {
             STEPPER
         ================================================= */}
 
-        <View
-          style={
-            styles.stepper
-          }
-        >
-          <View
-            style={
-              styles.stepperTop
-            }
-          >
+        <View style={styles.stepper}>
+          <View style={styles.stepperTop}>
             <View
               style={
                 styles.stepperTitleWrap
@@ -600,9 +598,7 @@ export default function JoinScreen() {
             >
               <Txt
                 variant="small"
-                color={
-                  colors.muted
-                }
+                color={colors.muted}
               >
                 انضم إلى شبكة مهنتي
               </Txt>
@@ -615,38 +611,34 @@ export default function JoinScreen() {
               >
                 {getStepTitle()}
               </Txt>
+
+              <Txt
+                variant="small"
+                color={colors.muted}
+                style={
+                  styles.stepDescription
+                }
+                numberOfLines={2}
+              >
+                {getStepDescription()}
+              </Txt>
             </View>
 
             <View
-              style={
-                styles.stepPill
-              }
+              style={styles.stepPill}
             >
-              <CircleCheck
-                size={14}
-                color={
-                  colors.primary
-                }
-              />
-
               <Txt
                 variant="labelSm"
-                color={
-                  colors.primary
-                }
-                style={
-                  styles.stepPillText
-                }
+                weight="700"
+                color={colors.primary}
               >
-                خطوة {step} من 4
+                {step}/4
               </Txt>
             </View>
           </View>
 
           <View
-            style={
-              styles.stepperRow
-            }
+            style={styles.stepperRow}
           >
             {stepLabels.map(
               (
@@ -672,9 +664,8 @@ export default function JoinScreen() {
                     <View
                       style={[
                         styles.stepBar,
-                        number <=
-                        step &&
-                        styles.stepBarActive,
+                        number <= step &&
+                          styles.stepBarActive,
                       ]}
                     />
 
@@ -683,14 +674,12 @@ export default function JoinScreen() {
                         styles.stepDot,
                         (active ||
                           completed) &&
-                        styles.stepDotActive,
+                          styles.stepDotActive,
                       ]}
                     >
                       {completed ? (
                         <Check
-                          size={
-                            13
-                          }
+                          size={13}
                           color={
                             colors.white
                           }
@@ -703,11 +692,8 @@ export default function JoinScreen() {
                               ? colors.white
                               : colors.muted
                           }
-                          align="center"
                         >
-                          {
-                            number
-                          }
+                          {number}
                         </Txt>
                       )}
                     </View>
@@ -716,7 +702,7 @@ export default function JoinScreen() {
                       variant="labelSm"
                       weight={
                         active
-                          ? '600'
+                          ? '700'
                           : '400'
                       }
                       color={
@@ -734,76 +720,50 @@ export default function JoinScreen() {
           </View>
         </View>
 
-        <View
-          style={
-            styles.body
-          }
-        >
+        <View style={styles.body}>
           {/* =================================================
               PROMO
           ================================================= */}
 
-          <LinearGradient
-            colors={[
-              colors.primary,
-              '#2D6A4F',
-            ]}
-            start={{
-              x: 0,
-              y: 0,
-            }}
-            end={{
-              x: 1,
-              y: 1,
-            }}
-            style={
-              styles.promo
-            }
-          >
+          {step === 1 && (
             <View
-              style={
-                styles.promoContent
-              }
+              style={styles.promo}
             >
               <View
-                style={
-                  styles.promoText
-                }
+                style={styles.promoIcon}
+              >
+                <Handshake
+                  size={22}
+                  color={
+                    colors.primary
+                  }
+                />
+              </View>
+
+              <View
+                style={styles.promoText}
               >
                 <Txt
-                  variant="h3"
-                  color={
-                    colors.white
-                  }
+                  variant="h4"
+                  color={colors.text}
                 >
-                  انضمام مجاني وفرص مستمرة
+                  انضم مجاناً
                 </Txt>
 
                 <Txt
                   variant="small"
-                  color="#CFE5D9"
+                  color={
+                    colors.muted
+                  }
                   style={
                     styles.promoDescription
                   }
                 >
-                  أنشئ ملفك المهني ليتمكن الزبائن من العثور عليك والثقة بخدماتك.
+                  أنشئ ملفك ليتمكن الزبائن من العثور عليك.
                 </Txt>
               </View>
-
-              <View
-                style={
-                  styles.promoIcon
-                }
-              >
-                <Handshake
-                  size={24}
-                  color={
-                    colors.mint
-                  }
-                />
-              </View>
             </View>
-          </LinearGradient>
+          )}
 
           {/* =================================================
               STEP 1
@@ -812,21 +772,19 @@ export default function JoinScreen() {
           {step === 1 && (
             <>
               <FieldCard
-                title="اسم المهني أو المحل التجاري"
+                title="اسم المهني أو المحل"
                 required
                 icon={
                   <Store
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
               >
                 <TextInput
-                  value={
-                    shopName
-                  }
+                  value={shopName}
                   onChangeText={
                     setShopName
                   }
@@ -849,7 +807,7 @@ export default function JoinScreen() {
                     styles.helper
                   }
                 >
-                  يظهر هذا الاسم للزبائن في نتائج البحث والخريطة والملف المهني.
+                  هذا الاسم سيظهر في نتائج البحث والملف المهني.
                 </Txt>
               </FieldCard>
 
@@ -857,24 +815,22 @@ export default function JoinScreen() {
                 title="نبذة تعريفية"
                 icon={
                   <Contact
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
               >
                 <TextInput
-                  value={
-                    bio
-                  }
+                  value={bio}
                   onChangeText={
                     setBio
                   }
                   multiline
                   textAlign="right"
                   textAlignVertical="top"
-                  placeholder="عرّف الزبائن بخبرتك وطبيعة عملك..."
+                  placeholder="اكتب نبذة قصيرة عن خبرتك وطبيعة عملك..."
                   placeholderTextColor={
                     colors.muted
                   }
@@ -890,7 +846,7 @@ export default function JoinScreen() {
                   }
                 >
                   <Sparkles
-                    size={12}
+                    size={13}
                     color={
                       colors.primary
                     }
@@ -905,7 +861,7 @@ export default function JoinScreen() {
                       styles.smartText
                     }
                   >
-                    اقتراح ذكي: اذكر الخبرة والمناطق التي تخدمها ونوع الأعمال التي تتقنها.
+                    اذكر الخبرة والمناطق التي تخدمها ونوع الأعمال التي تتقنها.
                   </Txt>
                 </View>
               </FieldCard>
@@ -915,9 +871,9 @@ export default function JoinScreen() {
                 required
                 icon={
                   <Phone
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -930,17 +886,12 @@ export default function JoinScreen() {
                   <Txt
                     variant="label"
                     weight="700"
-                    color={
-                      colors.text
-                    }
                   >
                     🇵🇸 +970
                   </Txt>
 
                   <TextInput
-                    value={
-                      phone
-                    }
+                    value={phone}
                     onChangeText={
                       setPhone
                     }
@@ -966,17 +917,26 @@ export default function JoinScreen() {
           {step === 2 && (
             <>
               <FieldCard
-                title="التصنيف المهني الرئيسي"
+                title="التصنيف الرئيسي"
                 required
                 icon={
                   <Wrench
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
               >
+                <Txt
+                  variant="small"
+                  color={
+                    colors.muted
+                  }
+                >
+                  اختر المجال الأساسي لنشاطك.
+                </Txt>
+
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={
@@ -987,22 +947,18 @@ export default function JoinScreen() {
                   }
                 >
                   {categories.map(
-                    (
-                      item,
-                    ) => {
+                    (item) => {
                       const active =
                         item.id ===
                         category;
 
                       return (
                         <Pressable
-                          key={
-                            item.id
-                          }
+                          key={item.id}
                           style={[
                             styles.categoryChip,
                             active &&
-                            styles.categoryChipActive,
+                              styles.categoryChipActive,
                           ]}
                           onPress={() =>
                             changeCategory(
@@ -1012,9 +968,7 @@ export default function JoinScreen() {
                         >
                           {active && (
                             <Check
-                              size={
-                                14
-                              }
+                              size={13}
                               color={
                                 colors.white
                               }
@@ -1023,7 +977,7 @@ export default function JoinScreen() {
 
                           <Txt
                             variant="labelSm"
-                            weight="700"
+                            weight="600"
                             color={
                               active
                                 ? colors.white
@@ -1046,7 +1000,7 @@ export default function JoinScreen() {
                   }
                 >
                   <BriefcaseBusiness
-                    size={17}
+                    size={15}
                     color={
                       colors.primary
                     }
@@ -1062,18 +1016,7 @@ export default function JoinScreen() {
                       styles.selectedCategoryText
                     }
                   >
-                    التصنيف المختار:
-                  </Txt>
-
-                  <Txt
-                    variant="labelSm"
-                    color={
-                      colors.primary
-                    }
-                  >
-                    {
-                      categoryLabel
-                    }
+                    {categoryLabel}
                   </Txt>
                 </View>
               </FieldCard>
@@ -1083,9 +1026,9 @@ export default function JoinScreen() {
                 required
                 icon={
                   <Zap
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -1096,18 +1039,14 @@ export default function JoinScreen() {
                     colors.muted
                   }
                 >
-                  اختر كل الخدمات التي تريد ظهورها للزبائن.
+                  اختر خدمة واحدة أو أكثر.
                 </Txt>
 
                 <View
-                  style={
-                    styles.wrap
-                  }
+                  style={styles.wrap}
                 >
                   {specialtyOptions.map(
-                    (
-                      item,
-                    ) => {
+                    (item) => {
                       const active =
                         selectedSpecialties.includes(
                           item,
@@ -1115,9 +1054,7 @@ export default function JoinScreen() {
 
                       return (
                         <Pressable
-                          key={
-                            item
-                          }
+                          key={item}
                           onPress={() =>
                             toggleSpecialty(
                               item,
@@ -1126,14 +1063,12 @@ export default function JoinScreen() {
                           style={[
                             styles.specialty,
                             active &&
-                            styles.specialtyActive,
+                              styles.specialtyActive,
                           ]}
                         >
                           {active && (
                             <Check
-                              size={
-                                14
-                              }
+                              size={13}
                               color={
                                 colors.white
                               }
@@ -1141,7 +1076,7 @@ export default function JoinScreen() {
                           )}
 
                           <Txt
-                            variant="label"
+                            variant="labelSm"
                             weight="600"
                             color={
                               active
@@ -1149,9 +1084,7 @@ export default function JoinScreen() {
                                 : colors.text
                             }
                           >
-                            {
-                              item
-                            }
+                            {item}
                           </Txt>
                         </Pressable>
                       );
@@ -1161,12 +1094,12 @@ export default function JoinScreen() {
               </FieldCard>
 
               <FieldCard
-                title="التواصل وشفافية الأسعار"
+                title="التواصل والأسعار"
                 icon={
                   <Wallet
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -1182,9 +1115,7 @@ export default function JoinScreen() {
                     }
                   >
                     <MessageSquare
-                      size={
-                        18
-                      }
+                      size={17}
                       color={
                         colors.white
                       }
@@ -1204,19 +1135,17 @@ export default function JoinScreen() {
                     </Txt>
 
                     <Txt
-                      variant="labelSm"
+                      variant="small"
                       color={
                         colors.muted
                       }
                     >
-                      الزبون يستطيع إرسال صور أو فيديوهات للعطل.
+                      يسمح للزبون بالتواصل وإرسال صور عند الحاجة.
                     </Txt>
                   </View>
 
                   <Switch
-                    value={
-                      whatsapp
-                    }
+                    value={whatsapp}
                     onValueChange={
                       setWhatsapp
                     }
@@ -1231,14 +1160,12 @@ export default function JoinScreen() {
                 </View>
 
                 <TextInput
-                  value={
-                    fee
-                  }
+                  value={fee}
                   onChangeText={
                     setFee
                   }
                   textAlign="right"
-                  placeholder="مثال: 30 - 50 شيكل"
+                  placeholder="السعر التقريبي: 30 - 50 شيكل"
                   placeholderTextColor={
                     colors.muted
                   }
@@ -1249,12 +1176,10 @@ export default function JoinScreen() {
                 />
 
                 <View
-                  style={
-                    styles.infoRow
-                  }
+                  style={styles.infoRow}
                 >
                   <Info
-                    size={15}
+                    size={14}
                     color={
                       colors.muted
                     }
@@ -1269,7 +1194,7 @@ export default function JoinScreen() {
                       styles.infoText
                     }
                   >
-                    اذكر الكشفية بشكل تقريبي وواضح لبناء الثقة مع العميل.
+                    السعر التقريبي يساعد العميل على فهم نطاق الخدمة.
                   </Txt>
                 </View>
               </FieldCard>
@@ -1287,9 +1212,9 @@ export default function JoinScreen() {
                 required
                 icon={
                   <MapPin
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -1300,43 +1225,32 @@ export default function JoinScreen() {
                     colors.muted
                   }
                 >
-                  حدد المناطق التي تخدم فيها عادةً.
+                  أين تقدم خدماتك؟
                 </Txt>
 
                 <View
-                  style={
-                    styles.wrap
-                  }
+                  style={styles.wrap}
                 >
                   {areas.map(
-                    (
-                      item,
-                    ) => {
+                    (item) => {
                       const active =
-                        area ===
-                        item;
+                        area === item;
 
                       return (
                         <Pressable
-                          key={
-                            item
-                          }
+                          key={item}
                           onPress={() =>
-                            setArea(
-                              item,
-                            )
+                            setArea(item)
                           }
                           style={[
                             styles.areaChip,
                             active &&
-                            styles.areaChipActive,
+                              styles.areaChipActive,
                           ]}
                         >
                           {active && (
                             <Check
-                              size={
-                                14
-                              }
+                              size={13}
                               color={
                                 colors.white
                               }
@@ -1344,7 +1258,7 @@ export default function JoinScreen() {
                           )}
 
                           <Txt
-                            variant="label"
+                            variant="labelSm"
                             weight="600"
                             color={
                               active
@@ -1352,9 +1266,7 @@ export default function JoinScreen() {
                                 : colors.text
                             }
                           >
-                            {
-                              item
-                            }
+                            {item}
                           </Txt>
                         </Pressable>
                       );
@@ -1367,9 +1279,9 @@ export default function JoinScreen() {
                 title="ساعات العمل"
                 icon={
                   <Clock3
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -1384,23 +1296,17 @@ export default function JoinScreen() {
                 </Txt>
 
                 <View
-                  style={
-                    styles.wrap
-                  }
+                  style={styles.wrap}
                 >
                   {workingHoursOptions.map(
-                    (
-                      item,
-                    ) => {
+                    (item) => {
                       const active =
                         workingHours ===
                         item;
 
                       return (
                         <Pressable
-                          key={
-                            item
-                          }
+                          key={item}
                           onPress={() =>
                             setWorkingHours(
                               item,
@@ -1409,14 +1315,12 @@ export default function JoinScreen() {
                           style={[
                             styles.areaChip,
                             active &&
-                            styles.areaChipActive,
+                              styles.areaChipActive,
                           ]}
                         >
                           {active && (
                             <Check
-                              size={
-                                14
-                              }
+                              size={13}
                               color={
                                 colors.white
                               }
@@ -1424,7 +1328,7 @@ export default function JoinScreen() {
                           )}
 
                           <Txt
-                            variant="label"
+                            variant="labelSm"
                             weight="600"
                             color={
                               active
@@ -1432,9 +1336,7 @@ export default function JoinScreen() {
                                 : colors.text
                             }
                           >
-                            {
-                              item
-                            }
+                            {item}
                           </Txt>
                         </Pressable>
                       );
@@ -1447,9 +1349,9 @@ export default function JoinScreen() {
                 title="خدمات إضافية"
                 icon={
                   <Navigation
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -1465,9 +1367,7 @@ export default function JoinScreen() {
                     }
                   >
                     <Navigation
-                      size={
-                        18
-                      }
+                      size={17}
                       color={
                         colors.primary
                       }
@@ -1487,12 +1387,12 @@ export default function JoinScreen() {
                     </Txt>
 
                     <Txt
-                      variant="labelSm"
+                      variant="small"
                       color={
                         colors.muted
                       }
                     >
-                      يمكن للزبائن طلب خدمتك في الموقع.
+                      يمكن للزبون طلب الخدمة في موقعه.
                     </Txt>
                   </View>
 
@@ -1525,9 +1425,7 @@ export default function JoinScreen() {
                   }
                 >
                   <ShieldCheck
-                    size={
-                      19
-                    }
+                    size={18}
                     color={
                       colors.success
                     }
@@ -1543,7 +1441,7 @@ export default function JoinScreen() {
                     variant="label"
                     weight="700"
                   >
-                    موقعك يحسن نتائج البحث
+                    موقعك مهم
                   </Txt>
 
                   <Txt
@@ -1551,8 +1449,11 @@ export default function JoinScreen() {
                     color={
                       colors.muted
                     }
+                    style={
+                      styles.locationTrustText
+                    }
                   >
-                    سيتم استخدام منطقة العمل لإظهار نشاطك للمستخدمين الأقرب إليك.
+                    منطقة العمل تساعد المستخدمين على العثور عليك بالقرب منهم.
                   </Txt>
                 </View>
               </View>
@@ -1566,12 +1467,12 @@ export default function JoinScreen() {
           {step === 4 && (
             <>
               <FieldCard
-                title="معاينة الملف المهني"
+                title="معاينة الملف"
                 icon={
                   <BadgeCheck
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -1591,26 +1492,27 @@ export default function JoinScreen() {
                         styles.previewImageWrap
                       }
                     >
+                      <Image
+                        source={{
+                          uri: profilePhoto,
+                        }}
+                        style={
+                          styles.previewImage
+                        }
+                      />
+
                       <View
                         style={
-                          styles.previewVerified
+                          styles.previewNewBadge
                         }
                       >
-                        <BadgeCheck
-                          size={
-                            14
-                          }
+                        <Sparkles
+                          size={12}
                           color={
                             colors.white
                           }
                         />
                       </View>
-
-                      <View
-                        style={
-                          styles.previewImage
-                        }
-                      />
                     </View>
 
                     <View
@@ -1618,49 +1520,33 @@ export default function JoinScreen() {
                         styles.previewInfo
                       }
                     >
-                      <View
+                      <Txt
+                        variant="h3"
+                        numberOfLines={2}
                         style={
-                          styles.previewNameRow
+                          styles.previewName
                         }
                       >
-                        <Txt
-                          variant="h3"
-                          numberOfLines={
-                            1
-                          }
-                          style={
-                            styles.previewName
-                          }
-                        >
-                          {
-                            shopName ||
-                            'اسم نشاطك'
-                          }
-                        </Txt>
-
-                        <CheckCircle2
-                          size={
-                            17
-                          }
-                          color={
-                            colors.success
-                          }
-                        />
-                      </View>
+                        {
+                          shopName ||
+                          'اسم نشاطك'
+                        }
+                      </Txt>
 
                       <Txt
                         variant="small"
                         color={
                           colors.muted
                         }
+                        style={
+                          styles.previewSubtitle
+                        }
                       >
                         {
                           categoryLabel
                         }{' '}
                         •{' '}
-                        {
-                          area
-                        }
+                        {area}
                       </Txt>
 
                       <View
@@ -1669,9 +1555,7 @@ export default function JoinScreen() {
                         }
                       >
                         <Star
-                          size={
-                            13
-                          }
+                          size={13}
                           color={
                             colors.amber
                           }
@@ -1683,9 +1567,6 @@ export default function JoinScreen() {
                         <Txt
                           variant="small"
                           weight="700"
-                          style={
-                            styles.previewRatingValue
-                          }
                         >
                           نشاط جديد
                         </Txt>
@@ -1696,7 +1577,7 @@ export default function JoinScreen() {
                             colors.muted
                           }
                         >
-                          • بدون تقييمات بعد
+                          بدون تقييمات بعد
                         </Txt>
                       </View>
                     </View>
@@ -1714,18 +1595,11 @@ export default function JoinScreen() {
                     }
                   >
                     {selectedSpecialties
-                      .slice(
-                        0,
-                        4,
-                      )
+                      .slice(0, 4)
                       .map(
-                        (
-                          item,
-                        ) => (
+                        (item) => (
                           <View
-                            key={
-                              item
-                            }
+                            key={item}
                             style={
                               styles.previewTag
                             }
@@ -1736,9 +1610,7 @@ export default function JoinScreen() {
                                 colors.primary
                               }
                             >
-                              {
-                                item
-                              }
+                              {item}
                             </Txt>
                           </View>
                         ),
@@ -1756,9 +1628,7 @@ export default function JoinScreen() {
                       }
                     >
                       <Clock3
-                        size={
-                          14
-                        }
+                        size={14}
                         color={
                           colors.success
                         }
@@ -1770,7 +1640,7 @@ export default function JoinScreen() {
                           colors.success
                         }
                       >
-                        متاح غالباً
+                        {workingHours}
                       </Txt>
                     </View>
 
@@ -1780,9 +1650,7 @@ export default function JoinScreen() {
                       }
                     >
                       <MapPin
-                        size={
-                          14
-                        }
+                        size={14}
                         color={
                           colors.muted
                         }
@@ -1794,9 +1662,7 @@ export default function JoinScreen() {
                           colors.muted
                         }
                       >
-                        {
-                          area
-                        }
+                        {area}
                       </Txt>
                     </View>
 
@@ -1806,9 +1672,7 @@ export default function JoinScreen() {
                       }
                     >
                       <Wallet
-                        size={
-                          14
-                        }
+                        size={14}
                         color={
                           colors.muted
                         }
@@ -1820,9 +1684,8 @@ export default function JoinScreen() {
                           colors.muted
                         }
                       >
-                        {
-                          fee
-                        }
+                        {fee ||
+                          'السعر حسب الخدمة'}
                       </Txt>
                     </View>
                   </View>
@@ -1830,12 +1693,12 @@ export default function JoinScreen() {
               </FieldCard>
 
               <FieldCard
-                title="ملخص بيانات النشاط"
+                title="ملخص النشاط"
                 icon={
                   <BriefcaseBusiness
-                    size={20}
+                    size={18}
                     color={
-                      colors.text
+                      colors.primary
                     }
                   />
                 }
@@ -1867,9 +1730,7 @@ export default function JoinScreen() {
 
                   <SummaryRow
                     label="الموقع"
-                    value={
-                      area
-                    }
+                    value={area}
                   />
 
                   <SummaryRow
@@ -1900,9 +1761,11 @@ export default function JoinScreen() {
               </FieldCard>
 
               <Pressable
-                style={
-                  styles.confirmRow
-                }
+                style={({ pressed }) => [
+                  styles.confirmRow,
+                  pressed &&
+                    styles.confirmRowPressed,
+                ]}
                 onPress={() =>
                   setAgreed(
                     (current) =>
@@ -1914,14 +1777,12 @@ export default function JoinScreen() {
                   style={[
                     styles.checkbox,
                     agreed &&
-                    styles.checkboxActive,
+                      styles.checkboxActive,
                   ]}
                 >
                   {agreed && (
                     <Check
-                      size={
-                        14
-                      }
+                      size={14}
                       color={
                         colors.white
                       }
@@ -1931,9 +1792,7 @@ export default function JoinScreen() {
 
                 <Txt
                   variant="small"
-                  color={
-                    colors.text
-                  }
+                  color={colors.text}
                   style={
                     styles.confirmText
                   }
@@ -1956,15 +1815,19 @@ export default function JoinScreen() {
         >
           {step > 1 ? (
             <Pressable
-              style={
-                styles.backButton
-              }
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed &&
+                  styles.backButtonPressed,
+              ]}
               onPress={
                 previousStep
               }
+              accessibilityRole="button"
+              accessibilityLabel="الخطوة السابقة"
             >
               <ArrowRight
-                size={19}
+                size={18}
                 color={
                   colors.primary
                 }
@@ -1985,14 +1848,16 @@ export default function JoinScreen() {
             </Pressable>
           ) : (
             <Pressable
-              style={
-                styles.cancelButton
-              }
+              style={({ pressed }) => [
+                styles.cancelButton,
+                pressed &&
+                  styles.cancelButtonPressed,
+              ]}
               onPress={() =>
-                router.replace(
-                  '/',
-                )
+                router.replace('/')
               }
+              accessibilityRole="button"
+              accessibilityLabel="إلغاء"
             >
               <X
                 size={17}
@@ -2017,12 +1882,16 @@ export default function JoinScreen() {
 
           {step < 4 ? (
             <Pressable
-              style={
-                styles.nextButton
-              }
+              style={({ pressed }) => [
+                styles.nextButton,
+                pressed &&
+                  styles.nextButtonPressed,
+              ]}
               onPress={
                 nextStep
               }
+              accessibilityRole="button"
+              accessibilityLabel="متابعة"
             >
               <Txt
                 variant="h4"
@@ -2034,7 +1903,7 @@ export default function JoinScreen() {
               </Txt>
 
               <ArrowLeft
-                size={20}
+                size={19}
                 color={
                   colors.white
                 }
@@ -2045,11 +1914,14 @@ export default function JoinScreen() {
               style={[
                 styles.nextButton,
                 !agreed &&
-                styles.nextButtonDisabled,
+                  styles.nextButtonDisabled,
               ]}
-              onPress={
-                finish
-              }
+              onPress={finish}
+              accessibilityRole="button"
+              accessibilityLabel="تأكيد وإكمال"
+              accessibilityState={{
+                disabled: !agreed,
+              }}
             >
               <Txt
                 variant="h4"
@@ -2075,9 +1947,7 @@ export default function JoinScreen() {
         ================================================= */}
 
         <View
-          style={
-            styles.footer
-          }
+          style={styles.footer}
         >
           <ShieldCheck
             size={15}
@@ -2156,8 +2026,7 @@ const styles =
     },
 
     content: {
-      paddingBottom:
-        34,
+      paddingBottom: 30,
     },
 
     /* =====================================================
@@ -2167,93 +2036,67 @@ const styles =
     stepper: {
       backgroundColor:
         colors.tint,
-
-      padding:
-        16,
-
-      paddingBottom:
-        13,
-
-      borderBottomWidth:
-        1,
-
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
       borderBottomColor:
         colors.border,
     },
 
     stepperTop: {
       ...row,
-
-      alignItems:
-        'center',
+      alignItems: 'flex-start',
     },
 
     stepperTitleWrap: {
-      flex:
-        1,
+      flex: 1,
+      minWidth: 0,
     },
 
     stepTitle: {
-      fontSize:
-        21,
+      fontSize: 21,
+      lineHeight: 29,
+      marginTop: 2,
+    },
 
-      marginTop:
-        2,
+    stepDescription: {
+      marginTop: 2,
+      lineHeight: 19,
     },
 
     stepPill: {
-      ...row,
-
-      backgroundColor:
-        colors.mint,
-
+      minWidth: 42,
+      height: 34,
       borderRadius:
         radius.full,
-
-      paddingHorizontal:
-        10,
-
-      paddingVertical:
-        5,
-    },
-
-    stepPillText: {
-      marginRight:
-        4,
+      backgroundColor:
+        colors.mintSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 9,
+      marginRight: 10,
     },
 
     stepperRow: {
       flexDirection:
         'row-reverse',
-
-      marginTop:
-        15,
-
       alignItems:
         'flex-start',
+      marginTop: 13,
     },
 
     stepItem: {
-      flex:
-        1,
-
-      alignItems:
-        'center',
+      flex: 1,
+      alignItems: 'center',
     },
 
     stepBar: {
-      height:
-        4,
-
+      height: 3,
       alignSelf:
         'stretch',
-
-      marginHorizontal:
-        3,
-
-      borderRadius:
-        2,
-
+      marginHorizontal: 3,
+      borderRadius: 2,
       backgroundColor:
         colors.border,
     },
@@ -2264,26 +2107,15 @@ const styles =
     },
 
     stepDot: {
-      width:
-        27,
-
-      height:
-        27,
-
-      borderRadius:
-        14,
-
+      width: 26,
+      height: 26,
+      borderRadius: 13,
       backgroundColor:
         colors.tintStrong,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      marginTop:
-        8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 7,
+      marginBottom: 3,
     },
 
     stepDotActive: {
@@ -2296,11 +2128,8 @@ const styles =
     ===================================================== */
 
     body: {
-      paddingHorizontal:
-        12,
-
-      paddingTop:
-        14,
+      paddingHorizontal: 12,
+      paddingTop: 13,
     },
 
     /* =====================================================
@@ -2308,57 +2137,32 @@ const styles =
     ===================================================== */
 
     promo: {
-      borderRadius:
-        radius.lg,
-
-      padding:
-        16,
-
-      marginBottom:
-        12,
-    },
-
-    promoContent: {
-      ...row,
-
-      alignItems:
-        'center',
-    },
-
-    promoText: {
-      flex:
-        1,
-    },
-
-    promoDescription: {
-      marginTop:
-        5,
-
-      lineHeight:
-        20,
+      ...card,
+      flexDirection:
+        'row-reverse',
+      alignItems: 'center',
+      padding: 12,
+      marginBottom: 10,
     },
 
     promoIcon: {
-      width:
-        50,
-
-      height:
-        50,
-
-      borderRadius:
-        25,
-
+      width: 40,
+      height: 40,
+      borderRadius: 12,
       backgroundColor:
-        'rgba(255,255,255,0.10)',
+        colors.tintStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-      alignItems:
-        'center',
+    promoText: {
+      flex: 1,
+      marginRight: 10,
+    },
 
-      justifyContent:
-        'center',
-
-      marginRight:
-        12,
+    promoDescription: {
+      marginTop: 2,
+      lineHeight: 18,
     },
 
     /* =====================================================
@@ -2367,79 +2171,67 @@ const styles =
 
     card: {
       ...card,
-
-      padding:
-        16,
-
-      marginBottom:
-        12,
+      padding: 14,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor:
+        colors.border,
+      shadowOpacity: 0,
+      elevation: 0,
     },
 
     cardHeading: {
       flexDirection:
         'row-reverse',
+      alignItems: 'center',
+      marginBottom: 11,
+    },
 
-      alignItems:
-        'center',
-
-      marginBottom:
-        12,
+    cardIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor:
+        colors.tintStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     cardHeadingText: {
-      marginRight:
-        8,
+      marginRight: 8,
     },
 
     /* =====================================================
-       INPUT
+       INPUTS
     ===================================================== */
 
     input: {
       backgroundColor:
         colors.tint,
-
       borderRadius:
         radius.md,
-
-      paddingHorizontal:
-        14,
-
-      minHeight:
-        48,
-
+      paddingHorizontal: 13,
+      minHeight: 48,
       fontFamily:
         fontFamilies['400'],
-
-      fontSize:
-        14,
-
+      fontSize: 14,
       color:
         colors.text,
     } as object,
 
     bioInput: {
-      minHeight:
-        125,
-
-      paddingTop:
-        12,
-
-      lineHeight:
-        24,
-    },
-
-    feeInput: {
-      marginTop:
-        12,
+      minHeight: 112,
+      paddingTop: 11,
+      lineHeight: 23,
     },
 
     helper: {
-      marginTop:
-        9,
+      marginTop: 8,
+      lineHeight: 18,
+    },
 
-      lineHeight:
-        19,
+    feeInput: {
+      marginTop: 10,
     },
 
     /* =====================================================
@@ -2449,32 +2241,20 @@ const styles =
     smartSuggestion: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'flex-start',
-
       backgroundColor:
         colors.mintSoft,
-
       borderRadius:
         radius.md,
-
-      padding:
-        9,
-
-      marginTop:
-        10,
+      padding: 8,
+      marginTop: 9,
     },
 
     smartText: {
-      flex:
-        1,
-
-      marginRight:
-        5,
-
-      lineHeight:
-        18,
+      flex: 1,
+      marginRight: 5,
+      lineHeight: 18,
     },
 
     /* =====================================================
@@ -2482,93 +2262,58 @@ const styles =
     ===================================================== */
 
     phoneField: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor:
         colors.tint,
-
       borderRadius:
         radius.md,
-
-      minHeight:
-        48,
-
-      paddingHorizontal:
-        14,
+      minHeight: 48,
+      paddingHorizontal: 13,
     },
 
     phoneInput: {
-      flex:
-        1,
-
-      marginLeft:
-        12,
-
-      minHeight:
-        48,
-
+      flex: 1,
+      marginLeft: 11,
+      minHeight: 48,
       fontFamily:
         fontFamilies['500'],
-
-      fontSize:
-        15,
-
+      fontSize: 15,
       color:
         colors.text,
-
       textAlign:
         'left',
     } as object,
 
     /* =====================================================
-       CATEGORIES
+       CATEGORY
     ===================================================== */
 
     categoryScroll: {
-      gap:
-        8,
-
-      paddingBottom:
-        3,
+      gap: 7,
+      paddingTop: 10,
+      paddingBottom: 3,
     },
 
     categoryChip: {
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
-      height:
-        40,
-
-      paddingHorizontal:
-        14,
-
+      alignItems: 'center',
+      height: 38,
+      paddingHorizontal: 12,
       borderRadius:
         radius.full,
-
       backgroundColor:
         colors.tintStrong,
-
-      borderWidth:
-        1,
-
+      borderWidth: 1,
       borderColor:
         colors.border,
-
-      gap:
-        5,
+      gap: 5,
     },
 
     categoryChipActive: {
       backgroundColor:
         colors.primary,
-
       borderColor:
         colors.primary,
     },
@@ -2576,76 +2321,66 @@ const styles =
     selectedCategory: {
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
+      alignItems: 'center',
       alignSelf:
         'flex-start',
-
       backgroundColor:
         colors.mintSoft,
-
       borderRadius:
         radius.full,
-
-      marginTop:
-        12,
-
-      paddingHorizontal:
-        10,
-
-      paddingVertical:
-        6,
+      marginTop: 10,
+      paddingHorizontal: 9,
+      paddingVertical: 6,
     },
 
     selectedCategoryText: {
-      marginHorizontal:
-        4,
+      marginRight: 5,
     },
 
     /* =====================================================
-       SPECIALTIES
+       TAGS
     ===================================================== */
 
     wrap: {
       flexDirection:
         'row-reverse',
-
-      flexWrap:
-        'wrap',
-
-      gap:
-        8,
-
-      marginTop:
-        11,
+      flexWrap: 'wrap',
+      gap: 7,
+      marginTop: 10,
     },
 
     specialty: {
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
-      minHeight:
-        38,
-
-      paddingHorizontal:
-        13,
-
+      alignItems: 'center',
+      minHeight: 37,
+      paddingHorizontal: 12,
       borderRadius:
         radius.full,
-
       backgroundColor:
         colors.tintStrong,
-
-      gap:
-        6,
+      gap: 5,
     },
 
     specialtyActive: {
+      backgroundColor:
+        colors.primary,
+    },
+
+    areaChip: {
+      flexDirection:
+        'row-reverse',
+      alignItems: 'center',
+      minHeight: 37,
+      paddingHorizontal: 12,
+      borderRadius:
+        radius.full,
+      backgroundColor:
+        colors.tintStrong,
+      gap: 5,
+    },
+
+    areaChipActive: {
       backgroundColor:
         colors.primary,
     },
@@ -2657,66 +2392,37 @@ const styles =
     optionRow: {
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
+      alignItems: 'center',
       backgroundColor:
         colors.tint,
-
       borderRadius:
         radius.md,
-
-      padding:
-        12,
+      padding: 10,
     },
 
     optionIcon: {
-      width:
-        40,
-
-      height:
-        40,
-
-      borderRadius:
-        12,
-
+      width: 38,
+      height: 38,
+      borderRadius: 11,
       backgroundColor:
         colors.success,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     optionIconSoft: {
-      width:
-        40,
-
-      height:
-        40,
-
-      borderRadius:
-        12,
-
+      width: 38,
+      height: 38,
+      borderRadius: 11,
       backgroundColor:
         colors.mintSoft,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     optionContent: {
-      flex:
-        1,
-
-      marginHorizontal:
-        12,
+      flex: 1,
+      marginHorizontal: 10,
     },
 
     /* =====================================================
@@ -2726,107 +2432,52 @@ const styles =
     infoRow: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'flex-start',
-
-      marginTop:
-        10,
+      marginTop: 9,
     },
 
     infoText: {
-      flex:
-        1,
-
-      marginRight:
-        6,
-
-      lineHeight:
-        19,
+      flex: 1,
+      marginRight: 5,
+      lineHeight: 18,
     },
 
     /* =====================================================
-       AREA
-    ===================================================== */
-
-    areaChip: {
-      flexDirection:
-        'row-reverse',
-
-      alignItems:
-        'center',
-
-      minHeight:
-        38,
-
-      paddingHorizontal:
-        13,
-
-      borderRadius:
-        radius.full,
-
-      backgroundColor:
-        colors.tintStrong,
-
-      gap:
-        5,
-    },
-
-    areaChipActive: {
-      backgroundColor:
-        colors.primary,
-    },
-
-    /* =====================================================
-       LOCATION TRUST
+       LOCATION NOTE
     ===================================================== */
 
     locationTrust: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'center',
-
       backgroundColor:
         colors.mintSoft,
-
       borderRadius:
         radius.lg,
-
-      padding:
-        13,
-
-      marginBottom:
-        12,
+      padding: 11,
+      marginBottom: 10,
     },
 
     locationTrustIcon: {
-      width:
-        40,
-
-      height:
-        40,
-
-      borderRadius:
-        12,
-
+      width: 38,
+      height: 38,
+      borderRadius: 11,
       backgroundColor:
         colors.white,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     locationTrustContent: {
-      flex:
-        1,
+      flex: 1,
+      marginRight: 9,
+    },
 
-      marginRight:
-        10,
+    locationTrustText: {
+      marginTop: 1,
+      lineHeight: 18,
     },
 
     /* =====================================================
@@ -2836,18 +2487,14 @@ const styles =
     previewCard: {
       backgroundColor:
         colors.tint,
-
       borderRadius:
         radius.lg,
-
-      padding:
-        13,
+      padding: 12,
     },
 
     previewTop: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'center',
     },
@@ -2855,171 +2502,94 @@ const styles =
     previewImageWrap: {
       position:
         'relative',
-
-      width:
-        67,
-
-      height:
-        67,
+      width: 66,
+      height: 66,
     },
 
     previewImage: {
-      width:
-        67,
-
-      height:
-        67,
-
-      borderRadius:
-        18,
-
+      width: 66,
+      height: 66,
+      borderRadius: 17,
       backgroundColor:
         colors.tintStrong,
+    },
 
-      backgroundImage:
-        `url(${profilePhoto})`,
-    } as object,
-
-    previewVerified: {
+    previewNewBadge: {
       position:
         'absolute',
-
-      zIndex:
-        5,
-
-      right:
-        -3,
-
-      top:
-        -4,
-
-      width:
-        22,
-
-      height:
-        22,
-
-      borderRadius:
-        11,
-
+      top: -3,
+      right: -3,
+      width: 21,
+      height: 21,
+      borderRadius: 11,
       backgroundColor:
-        colors.success,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+        colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     previewInfo: {
-      flex:
-        1,
-
-      marginRight:
-        11,
-
-      minWidth:
-        0,
-    },
-
-    previewNameRow: {
-      flexDirection:
-        'row-reverse',
-
-      alignItems:
-        'center',
+      flex: 1,
+      minWidth: 0,
+      marginRight: 10,
     },
 
     previewName: {
-      flex:
-        1,
+      fontSize: 18,
+      lineHeight: 25,
+    },
 
-      fontSize:
-        18,
-
-      marginLeft:
-        4,
+    previewSubtitle: {
+      marginTop: 2,
     },
 
     previewRating: {
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
-      marginTop:
-        5,
-
-      gap:
-        4,
-    },
-
-    previewRatingValue: {
-      marginHorizontal:
-        1,
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 5,
     },
 
     previewDivider: {
-      height:
-        1,
-
+      height: 1,
       backgroundColor:
         colors.border,
-
-      marginVertical:
-        12,
+      marginVertical: 11,
     },
 
     previewTags: {
       flexDirection:
         'row-reverse',
-
-      flexWrap:
-        'wrap',
-
-      gap:
-        6,
+      flexWrap: 'wrap',
+      gap: 6,
     },
 
     previewTag: {
       backgroundColor:
         colors.mintSoft,
-
       borderRadius:
         radius.full,
-
-      paddingHorizontal:
-        9,
-
-      paddingVertical:
-        5,
+      paddingHorizontal: 8,
+      paddingVertical: 5,
     },
 
     previewMeta: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'center',
-
-      marginTop:
-        11,
-
-      gap:
-        12,
+      flexWrap: 'wrap',
+      gap: 10,
+      marginTop: 10,
     },
 
     previewMetaItem: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'center',
-
-      gap:
-        4,
+      gap: 4,
     },
 
     /* =====================================================
@@ -3027,36 +2597,23 @@ const styles =
     ===================================================== */
 
     summary: {
-      gap:
-        1,
+      gap: 1,
     },
 
     summaryRow: {
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
-      minHeight:
-        40,
-
-      borderBottomWidth:
-        1,
-
+      alignItems: 'center',
+      minHeight: 39,
+      borderBottomWidth: 1,
       borderBottomColor:
         colors.border,
     },
 
     summaryValue: {
-      flex:
-        1,
-
-      textAlign:
-        'left',
-
-      marginRight:
-        15,
+      flex: 1,
+      textAlign: 'left',
+      marginRight: 14,
     },
 
     /* =====================================================
@@ -3066,51 +2623,33 @@ const styles =
     confirmRow: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'flex-start',
-
       backgroundColor:
         colors.white,
-
       borderRadius:
         radius.lg,
-
-      borderWidth:
-        1,
-
+      borderWidth: 1,
       borderColor:
         colors.border,
+      padding: 12,
+      marginBottom: 10,
+    },
 
-      padding:
-        13,
-
-      marginBottom:
-        12,
+    confirmRowPressed: {
+      backgroundColor:
+        colors.tint,
     },
 
     checkbox: {
-      width:
-        23,
-
-      height:
-        23,
-
-      borderRadius:
-        7,
-
-      borderWidth:
-        1.5,
-
+      width: 23,
+      height: 23,
+      borderRadius: 7,
+      borderWidth: 1.5,
       borderColor:
         colors.border,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor:
         colors.white,
     },
@@ -3118,20 +2657,14 @@ const styles =
     checkboxActive: {
       backgroundColor:
         colors.primary,
-
       borderColor:
         colors.primary,
     },
 
     confirmText: {
-      flex:
-        1,
-
-      marginRight:
-        9,
-
-      lineHeight:
-        20,
+      flex: 1,
+      marginRight: 9,
+      lineHeight: 20,
     },
 
     /* =====================================================
@@ -3141,100 +2674,75 @@ const styles =
     navigation: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'center',
-
-      paddingHorizontal:
-        12,
-
-      marginTop:
-        3,
-
-      gap:
-        10,
+      paddingHorizontal: 12,
+      marginTop: 2,
+      gap: 9,
     },
 
     nextButton: {
-      flex:
-        1,
-
-      minHeight:
-        54,
-
+      flex: 1,
+      minHeight: 52,
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.primary,
-
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
+      alignItems: 'center',
       justifyContent:
         'center',
+      gap: 7,
+    },
 
-      gap:
-        8,
+    nextButtonPressed: {
+      opacity: 0.88,
     },
 
     nextButtonDisabled: {
-      opacity:
-        0.65,
+      opacity: 0.5,
     },
 
     backButton: {
-      minHeight:
-        54,
-
-      paddingHorizontal:
-        16,
-
+      minHeight: 52,
+      paddingHorizontal: 15,
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.mintSoft,
-
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
+      alignItems: 'center',
       justifyContent:
         'center',
+    },
+
+    backButtonPressed: {
+      backgroundColor:
+        colors.tintStrong,
     },
 
     cancelButton: {
-      minHeight:
-        54,
-
-      paddingHorizontal:
-        16,
-
+      minHeight: 52,
+      paddingHorizontal: 15,
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.tintStrong,
-
       flexDirection:
         'row-reverse',
-
-      alignItems:
-        'center',
-
+      alignItems: 'center',
       justifyContent:
         'center',
     },
 
+    cancelButtonPressed: {
+      opacity: 0.75,
+    },
+
     backText: {
-      marginRight:
-        5,
+      marginRight: 5,
     },
 
     /* =====================================================
@@ -3244,28 +2752,18 @@ const styles =
     footer: {
       flexDirection:
         'row-reverse',
-
       alignItems:
         'center',
-
       justifyContent:
         'center',
-
-      paddingHorizontal:
-        18,
-
-      marginTop:
-        17,
+      paddingHorizontal: 18,
+      marginTop: 15,
     },
 
     footerText: {
-      marginRight:
-        5,
-
-      textAlign:
-        'center',
-
-      lineHeight:
-        19,
+      flex: 1,
+      marginRight: 5,
+      textAlign: 'center',
+      lineHeight: 18,
     },
   });

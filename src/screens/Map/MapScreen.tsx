@@ -6,6 +6,7 @@ import React, {
 } from 'react';
 
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Linking,
@@ -30,7 +31,6 @@ import * as Location from 'expo-location';
 
 import {
   ArrowUpRight,
-  BriefcaseBusiness,
   CheckCircle2,
   Clock3,
   Crosshair,
@@ -93,14 +93,119 @@ const getParam = (
 const mapProviders = craftsmen;
 
 /* =========================================================
+   CHECKPOINT MODEL
+   ---------------------------------------------------------
+   DEMO DATA ONLY
+
+   This structure is intentionally separated from the map
+   so it can later be replaced by an API response without
+   changing the Leaflet rendering logic.
+========================================================= */
+
+type CheckpointStatus =
+  | 'open'
+  | 'closed';
+
+type Checkpoint = {
+  id: string;
+  name: string;
+  area: string;
+  latitude: number;
+  longitude: number;
+  status: CheckpointStatus;
+  lastUpdated: string;
+  note: string;
+};
+
+/* =========================================================
+   DEMO CHECKPOINTS
+
+   IMPORTANT:
+   These are fictional/demo locations and statuses.
+   They are NOT live checkpoint information.
+========================================================= */
+
+const mapCheckpoints: Checkpoint[] = [
+  {
+    id: 'checkpoint-demo-1',
+    name: 'حاجز تجريبي 1',
+    area: 'شمال رام الله',
+    latitude: 31.9558,
+    longitude: 35.2048,
+    status: 'open',
+    lastUpdated: 'بيانات تجريبية',
+    note: 'الحالة هنا للتجربة فقط وستصبح من API لاحقًا.',
+  },
+
+  {
+    id: 'checkpoint-demo-2',
+    name: 'حاجز تجريبي 2',
+    area: 'شرق رام الله',
+    latitude: 31.9196,
+    longitude: 35.2461,
+    status: 'closed',
+    lastUpdated: 'بيانات تجريبية',
+    note: 'الحالة هنا للتجربة فقط وستصبح من API لاحقًا.',
+  },
+
+  {
+    id: 'checkpoint-demo-3',
+    name: 'حاجز تجريبي 3',
+    area: 'جنوب رام الله',
+    latitude: 31.8465,
+    longitude: 35.1892,
+    status: 'open',
+    lastUpdated: 'بيانات تجريبية',
+    note: 'الحالة هنا للتجربة فقط وستصبح من API لاحقًا.',
+  },
+
+  {
+    id: 'checkpoint-demo-4',
+    name: 'حاجز تجريبي 4',
+    area: 'منطقة نابلس',
+    latitude: 32.2155,
+    longitude: 35.2618,
+    status: 'closed',
+    lastUpdated: 'بيانات تجريبية',
+    note: 'الحالة هنا للتجربة فقط وستصبح من API لاحقًا.',
+  },
+
+  {
+    id: 'checkpoint-demo-5',
+    name: 'حاجز تجريبي 5',
+    area: 'منطقة بيت لحم',
+    latitude: 31.7042,
+    longitude: 35.2071,
+    status: 'open',
+    lastUpdated: 'بيانات تجريبية',
+    note: 'الحالة هنا للتجربة فقط وستصبح من API لاحقًا.',
+  },
+
+  {
+    id: 'checkpoint-demo-6',
+    name: 'حاجز تجريبي 6',
+    area: 'منطقة الخليل',
+    latitude: 31.5438,
+    longitude: 35.1047,
+    status: 'closed',
+    lastUpdated: 'بيانات تجريبية',
+    note: 'الحالة هنا للتجربة فقط وستصبح من API لاحقًا.',
+  },
+];
+
+/* =========================================================
    HTML MAP
 ========================================================= */
 
 function buildMapHtml(
   providers: Craftsman[],
+  checkpoints: Checkpoint[],
 ): string {
   const providersJson =
     JSON.stringify(providers);
+
+  const checkpointsJson =
+    JSON.stringify(checkpoints);
 
   const defaultCenterJson =
     JSON.stringify([
@@ -110,6 +215,7 @@ function buildMapHtml(
 
   return `
 <!DOCTYPE html>
+
 <html lang="ar" dir="rtl">
 
 <head>
@@ -135,13 +241,17 @@ function buildMapHtml(
 html,
 body,
 #map {
+
   width: 100%;
   height: 100%;
+
   margin: 0;
   padding: 0;
+
   overflow: hidden;
 
-  background: #F8F9F6;
+  background:
+    #F8F9F6;
 
   font-family:
     Arial,
@@ -149,29 +259,66 @@ body,
     sans-serif;
 }
 
+body {
+
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
 .leaflet-container {
-  background: #F8F9F6;
+
+  background:
+    #F8F9F6;
+}
+
+.leaflet-tile {
+
+  transition:
+    opacity 160ms ease;
 }
 
 .leaflet-control-attribution {
-  font-size: 9px;
+
+  font-size:
+    9px;
+
+  line-height:
+    1;
 
   background:
-    rgba(255, 255, 255, 0.90) !important;
+    rgba(
+      255,
+      255,
+      255,
+      0.90
+    ) !important;
 
   border-radius:
-    6px 0 0 0;
+    8px 0 0 0;
 
   padding:
-    3px 6px !important;
+    4px 7px !important;
+
+  box-shadow:
+    0 2px 8px
+    rgba(
+      0,
+      0,
+      0,
+      0.08
+    );
 }
 
 .leaflet-control-attribution a {
-  color: #1B4332;
+
+  color:
+    #1B4332;
 }
 
 .leaflet-control-zoom {
-  display: none;
+
+  display:
+    none;
 }
 
 /* ===============================================
@@ -179,17 +326,25 @@ body,
 =============================================== */
 
 .mihnati-marker {
-  width: 42px;
-  height: 42px;
 
-  border-radius: 50%;
+  width:
+    42px;
 
-  background: #1B4332;
+  height:
+    42px;
+
+  border-radius:
+    50%;
+
+  background:
+    #1B4332;
 
   border:
-    3px solid #FFFFFF;
+    3px solid
+    #FFFFFF;
 
-  display: flex;
+  display:
+    flex;
 
   align-items:
     center;
@@ -200,52 +355,109 @@ body,
   position:
     relative;
 
+  box-sizing:
+    border-box;
+
   box-shadow:
-    0 4px 12px
-    rgba(0, 0, 0, 0.22);
+    0 5px 14px
+    rgba(
+      0,
+      0,
+      0,
+      0.20
+    );
 
   transition:
-    all 180ms ease;
+    width 180ms ease,
+    height 180ms ease,
+    transform 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .mihnati-marker.selected {
-  width: 50px;
-  height: 50px;
 
-  background: #40916C;
+  width:
+    52px;
+
+  height:
+    52px;
+
+  background:
+    #40916C;
 
   box-shadow:
-    0 8px 20px
-    rgba(64, 145, 108, 0.40);
+    0 9px 22px
+    rgba(
+      27,
+      67,
+      50,
+      0.30
+    );
 
   transform:
     translateY(-3px);
 }
 
 .marker-icon {
-  width: 20px;
-  height: 20px;
+
+  width:
+    20px;
+
+  height:
+    20px;
 
   display:
     block;
 }
 
 .marker-ring {
+
   position:
     absolute;
 
   inset:
-    -5px;
+    -7px;
 
   border:
     2px solid
-    rgba(64, 145, 108, 0.30);
+    rgba(
+      64,
+      145,
+      108,
+      0.24
+    );
+
+  border-radius:
+    50%;
+}
+
+.marker-ring::after {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  inset:
+    -3px;
+
+  border:
+    1px solid
+    rgba(
+      64,
+      145,
+      108,
+      0.12
+    );
 
   border-radius:
     50%;
 }
 
 .status-dot {
+
   position:
     absolute;
 
@@ -268,12 +480,426 @@ body,
     #2D936C;
 
   border:
-    2px solid #FFFFFF;
+    2px solid
+    #FFFFFF;
 }
 
 .status-dot.closed {
+
   background:
     #6B7280;
+}
+
+/* ===============================================
+   CHECKPOINT MARKER
+   Gate / Barrier Shape
+=============================================== */
+
+.checkpoint-marker {
+
+  width:
+    48px;
+
+  height:
+    56px;
+
+  position:
+    relative;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  box-sizing:
+    border-box;
+
+  filter:
+    drop-shadow(
+      0 4px 7px
+      rgba(
+        0,
+        0,
+        0,
+        0.20
+      )
+    );
+
+  transition:
+    transform 180ms ease;
+}
+
+.checkpoint-marker.selected {
+
+  transform:
+    translateY(-3px)
+    scale(1.08);
+}
+
+.checkpoint-frame {
+
+  position:
+    absolute;
+
+  left:
+    7px;
+
+  right:
+    7px;
+
+  top:
+    11px;
+
+  bottom:
+    7px;
+
+  border:
+    3px solid
+    #FFFFFF;
+
+  border-bottom:
+    4px solid
+    #FFFFFF;
+
+  border-radius:
+    5px 5px 2px 2px;
+
+  background:
+    rgba(
+      27,
+      67,
+      50,
+      0.94
+    );
+
+  box-sizing:
+    border-box;
+}
+
+.checkpoint-roof {
+
+  position:
+    absolute;
+
+  top:
+    3px;
+
+  left:
+    4px;
+
+  right:
+    4px;
+
+  height:
+    12px;
+
+  border-radius:
+    5px 5px 2px 2px;
+
+  background:
+    #FFFFFF;
+
+  border:
+    2px solid
+    #1B4332;
+
+  box-sizing:
+    border-box;
+}
+
+.checkpoint-roof::before,
+.checkpoint-roof::after {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  top:
+    2px;
+
+  bottom:
+    2px;
+
+  width:
+    3px;
+
+  background:
+    #1B4332;
+
+  border-radius:
+    2px;
+}
+
+.checkpoint-roof::before {
+
+  left:
+    8px;
+}
+
+.checkpoint-roof::after {
+
+  right:
+    8px;
+}
+
+.checkpoint-post-left,
+.checkpoint-post-right {
+
+  position:
+    absolute;
+
+  top:
+    15px;
+
+  bottom:
+    5px;
+
+  width:
+    7px;
+
+  border:
+    2px solid
+    #FFFFFF;
+
+  background:
+    #1B4332;
+
+  border-radius:
+    3px;
+
+  z-index:
+    3;
+
+  box-sizing:
+    border-box;
+}
+
+.checkpoint-post-left {
+
+  left:
+    5px;
+}
+
+.checkpoint-post-right {
+
+  right:
+    5px;
+}
+
+.checkpoint-lane {
+
+  position:
+    absolute;
+
+  left:
+    14px;
+
+  right:
+    14px;
+
+  top:
+    19px;
+
+  bottom:
+    10px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.92
+    );
+
+  border-radius:
+    2px;
+
+  box-sizing:
+    border-box;
+
+  z-index:
+    1;
+}
+
+.checkpoint-bar {
+
+  position:
+    absolute;
+
+  width:
+    27px;
+
+  height:
+    6px;
+
+  left:
+    10px;
+
+  top:
+    25px;
+
+  border-radius:
+    4px;
+
+  background:
+    #D64545;
+
+  border:
+    2px solid
+    #FFFFFF;
+
+  box-sizing:
+    border-box;
+
+  z-index:
+    5;
+
+  transform-origin:
+    right center;
+
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.checkpoint-marker.open
+.checkpoint-bar {
+
+  background:
+    #2D936C;
+
+  transform:
+    rotate(
+      -34deg
+    );
+
+  top:
+    27px;
+}
+
+.checkpoint-light {
+
+  position:
+    absolute;
+
+  width:
+    10px;
+
+  height:
+    10px;
+
+  border-radius:
+    50%;
+
+  right:
+    0px;
+
+  top:
+    -2px;
+
+  background:
+    #D64545;
+
+  border:
+    2px solid
+    #FFFFFF;
+
+  box-sizing:
+    border-box;
+
+  z-index:
+    10;
+}
+
+.checkpoint-light.open {
+
+  background:
+    #2D936C;
+}
+
+.checkpoint-label {
+
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  top:
+    56px;
+
+  transform:
+    translateX(-50%);
+
+  white-space:
+    nowrap;
+
+  padding:
+    3px 6px;
+
+  border-radius:
+    7px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.94
+    );
+
+  border:
+    1px solid
+    rgba(
+      229,
+      231,
+      235,
+      0.90
+    );
+
+  color:
+    #1F2933;
+
+  font-size:
+    9px;
+
+  line-height:
+    12px;
+
+  font-weight:
+    700;
+
+  box-shadow:
+    0 2px 7px
+    rgba(
+      0,
+      0,
+      0,
+      0.10
+    );
+
+  pointer-events:
+    none;
+}
+
+.checkpoint-marker.open
+.checkpoint-label {
+
+  color:
+    #2D936C;
+}
+
+.checkpoint-marker.closed
+.checkpoint-label {
+
+  color:
+    #D64545;
 }
 
 /* ===============================================
@@ -281,6 +907,7 @@ body,
 =============================================== */
 
 .user-location {
+
   width:
     18px;
 
@@ -294,14 +921,28 @@ body,
     #40916C;
 
   border:
-    4px solid #FFFFFF;
+    4px solid
+    #FFFFFF;
+
+  box-sizing:
+    border-box;
 
   box-shadow:
-    0 0 0 8px
-      rgba(64, 145, 108, 0.18),
+    0 0 0 7px
+      rgba(
+        64,
+        145,
+        108,
+        0.16
+      ),
 
     0 3px 10px
-      rgba(0, 0, 0, 0.20);
+      rgba(
+        0,
+        0,
+        0,
+        0.20
+      );
 }
 
 </style>
@@ -317,16 +958,25 @@ body,
 const providers =
   ${providersJson};
 
+const checkpoints =
+  ${checkpointsJson};
+
 const defaultCenter =
   ${defaultCenterJson};
 
 let selectedId =
   null;
 
+let selectedCheckpointId =
+  null;
+
 let userMarker =
   null;
 
 const markerMap =
+  {};
+
+const checkpointMarkerMap =
   {};
 
 /* =====================================================
@@ -343,7 +993,9 @@ function postToReactNative(
   ) {
 
     window.ReactNativeWebView.postMessage(
-      JSON.stringify(payload)
+      JSON.stringify(
+        payload
+      )
     );
   }
 }
@@ -356,6 +1008,7 @@ const map =
   L.map(
     'map',
     {
+
       zoomControl:
         false,
 
@@ -390,14 +1043,20 @@ const map =
         true,
 
       keyboard:
-        false
+        false,
+
+      touchZoom:
+        true,
+
+      preferCanvas:
+        true,
     }
   );
 
 map.setView(
   [
     defaultCenter[1],
-    defaultCenter[0]
+    defaultCenter[0],
   ],
 
   ${DEFAULT_ZOOM}
@@ -410,13 +1069,25 @@ map.setView(
 L.tileLayer(
   'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   {
+
     maxZoom:
       19,
 
     attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+
+    keepBuffer:
+      2,
+
+    updateWhenZooming:
+      false,
+
+    updateWhenIdle:
+      true,
   }
-).addTo(map);
+).addTo(
+  map
+);
 
 /* =====================================================
    CREATE PROVIDER ICON
@@ -429,7 +1100,7 @@ function createMarkerIcon(
 
   const size =
     selected
-      ? 50
+      ? 52
       : 42;
 
   const selectedClass =
@@ -497,12 +1168,89 @@ function createMarkerIcon(
       '<div ' +
         'class="status-dot ' +
         statusClass +
-        '"' +
+      '"' +
       '></div>' +
 
     '</div>';
 
   return L.divIcon({
+
+    className:
+      '',
+
+    html:
+
+      html,
+
+    iconSize:
+      [size, size],
+
+    iconAnchor:
+      [
+        size / 2,
+        size,
+      ],
+  });
+}
+
+/* =====================================================
+   CREATE CHECKPOINT ICON
+   -----------------------------------------------------
+   Gate-shaped marker.
+===================================================== */
+
+function createCheckpointIcon(
+  checkpoint,
+  selected
+) {
+
+  const selectedClass =
+    selected
+      ? 'selected'
+      : '';
+
+  const statusClass =
+    checkpoint.status === 'open'
+      ? 'open'
+      : 'closed';
+
+  const statusText =
+    checkpoint.status === 'open'
+      ? 'مفتوح'
+      : 'مغلق';
+
+  const html =
+    '<div ' +
+      'class="checkpoint-marker ' +
+      statusClass +
+      ' ' +
+      selectedClass +
+    '">' +
+
+      '<div class="checkpoint-roof"></div>' +
+
+      '<div class="checkpoint-post-left"></div>' +
+
+      '<div class="checkpoint-post-right"></div>' +
+
+      '<div class="checkpoint-frame"></div>' +
+
+      '<div class="checkpoint-lane"></div>' +
+
+      '<div class="checkpoint-bar"></div>' +
+
+      '<div class="checkpoint-light ' +
+        statusClass +
+      '"></div>' +
+
+      '<div class="checkpoint-label">' +
+        statusText +
+      '</div>' +
+
+    '</div>';
+
+  return L.divIcon({
+
     className:
       '',
 
@@ -510,11 +1258,87 @@ function createMarkerIcon(
       html,
 
     iconSize:
-      [size, size],
+      [
+        48,
+        66,
+      ],
 
     iconAnchor:
-      [size / 2, size],
+      [
+        24,
+        56,
+      ],
   });
+}
+
+/* =====================================================
+   RESET PROVIDER MARKERS
+===================================================== */
+
+function resetProviderIcons() {
+
+  Object.keys(
+    markerMap
+  ).forEach(
+    function(id) {
+
+      const current =
+        providers.find(
+          function(item) {
+
+            return (
+              item.id === id
+            );
+          }
+        );
+
+      if (!current) {
+        return;
+      }
+
+      markerMap[id].setIcon(
+        createMarkerIcon(
+          current,
+          false
+        )
+      );
+    }
+  );
+}
+
+/* =====================================================
+   RESET CHECKPOINT MARKERS
+===================================================== */
+
+function resetCheckpointIcons() {
+
+  Object.keys(
+    checkpointMarkerMap
+  ).forEach(
+    function(id) {
+
+      const checkpoint =
+        checkpoints.find(
+          function(item) {
+
+            return (
+              item.id === id
+            );
+          }
+        );
+
+      if (!checkpoint) {
+        return;
+      }
+
+      checkpointMarkerMap[id].setIcon(
+        createCheckpointIcon(
+          checkpoint,
+          false
+        )
+      );
+    }
+  );
 }
 
 /* =====================================================
@@ -528,6 +1352,11 @@ function selectProvider(
   selectedId =
     provider.id;
 
+  selectedCheckpointId =
+    null;
+
+  resetCheckpointIcons();
+
   Object.keys(
     markerMap
   ).forEach(
@@ -536,7 +1365,10 @@ function selectProvider(
       const current =
         providers.find(
           function(item) {
-            return item.id === id;
+
+            return (
+              item.id === id
+            );
           }
         );
 
@@ -556,23 +1388,99 @@ function selectProvider(
   map.flyTo(
     [
       provider.latitude,
-      provider.longitude
+      provider.longitude,
     ],
 
     15,
 
     {
       duration:
-        0.70
+        0.70,
+
+      easeLinearity:
+        0.2,
     }
   );
 
   postToReactNative({
+
     type:
       'providerSelected',
 
     id:
-      provider.id
+      provider.id,
+  });
+}
+
+/* =====================================================
+   SELECT CHECKPOINT
+===================================================== */
+
+function selectCheckpoint(
+  checkpoint
+) {
+
+  selectedCheckpointId =
+    checkpoint.id;
+
+  selectedId =
+    null;
+
+  resetProviderIcons();
+
+  Object.keys(
+    checkpointMarkerMap
+  ).forEach(
+    function(id) {
+
+      const current =
+        checkpoints.find(
+          function(item) {
+
+            return (
+              item.id === id
+            );
+          }
+        );
+
+      if (!current) {
+        return;
+      }
+
+      checkpointMarkerMap[id].setIcon(
+        createCheckpointIcon(
+          current,
+          id ===
+            selectedCheckpointId
+        )
+      );
+    }
+  );
+
+  map.flyTo(
+    [
+      checkpoint.latitude,
+      checkpoint.longitude,
+    ],
+
+    14.5,
+
+    {
+      duration:
+        0.70,
+
+      easeLinearity:
+        0.2,
+    }
+  );
+
+  postToReactNative({
+
+    type:
+      'checkpointSelected',
+
+    id:
+      checkpoint.id,
   });
 }
 
@@ -585,39 +1493,28 @@ function clearSelection() {
   selectedId =
     null;
 
-  Object.keys(
-    markerMap
-  ).forEach(
-    function(id) {
+  selectedCheckpointId =
+    null;
 
-      const current =
-        providers.find(
-          function(item) {
-            return item.id === id;
-          }
-        );
+  resetProviderIcons();
 
-      if (!current) {
-        return;
-      }
-
-      markerMap[id].setIcon(
-        createMarkerIcon(
-          current,
-          false
-        )
-      );
-    }
-  );
+  resetCheckpointIcons();
 
   postToReactNative({
+
     type:
-      'providerDeselected'
+      'providerDeselected',
+  });
+
+  postToReactNative({
+
+    type:
+      'checkpointDeselected',
   });
 }
 
 /* =====================================================
-   ADD ALL PROVIDER MARKERS
+   ADD PROVIDER MARKERS
 ===================================================== */
 
 providers.forEach(
@@ -627,7 +1524,7 @@ providers.forEach(
       L.marker(
         [
           provider.latitude,
-          provider.longitude
+          provider.longitude,
         ],
 
         {
@@ -641,14 +1538,31 @@ providers.forEach(
             true,
 
           keyboard:
-            false
+            false,
+
+          zIndexOffset:
+            provider.isOpen
+              ? 100
+              : 10,
         }
-      ).addTo(map);
+      ).addTo(
+        map
+      );
 
     marker.on(
       'click',
+      function(event) {
 
-      function() {
+        if (
+          event &&
+          event.originalEvent
+        ) {
+
+          L.DomEvent.stopPropagation(
+            event
+          );
+        }
+
         selectProvider(
           provider
         );
@@ -663,6 +1577,67 @@ providers.forEach(
 );
 
 /* =====================================================
+   ADD CHECKPOINT MARKERS
+===================================================== */
+
+checkpoints.forEach(
+  function(checkpoint) {
+
+    const marker =
+      L.marker(
+        [
+          checkpoint.latitude,
+          checkpoint.longitude,
+        ],
+
+        {
+          icon:
+            createCheckpointIcon(
+              checkpoint,
+              false
+            ),
+
+          riseOnHover:
+            true,
+
+          keyboard:
+            false,
+
+          zIndexOffset:
+            400,
+        }
+      ).addTo(
+        map
+      );
+
+    marker.on(
+      'click',
+      function(event) {
+
+        if (
+          event &&
+          event.originalEvent
+        ) {
+
+          L.DomEvent.stopPropagation(
+            event
+          );
+        }
+
+        selectCheckpoint(
+          checkpoint
+        );
+      }
+    );
+
+    checkpointMarkerMap[
+      checkpoint.id
+    ] =
+      marker;
+  }
+);
+
+/* =====================================================
    MAP CLICK
 ===================================================== */
 
@@ -670,6 +1645,7 @@ map.on(
   'click',
 
   function() {
+
     clearSelection();
   }
 );
@@ -690,14 +1666,14 @@ function fitProviders(
     map.flyTo(
       [
         defaultCenter[1],
-        defaultCenter[0]
+        defaultCenter[0],
       ],
 
       ${DEFAULT_ZOOM},
 
       {
         duration:
-          0.60
+          0.60,
       }
     );
 
@@ -711,14 +1687,14 @@ function fitProviders(
     map.flyTo(
       [
         list[0].latitude,
-        list[0].longitude
+        list[0].longitude,
       ],
 
       15,
 
       {
         duration:
-          0.60
+          0.60,
       }
     );
 
@@ -729,9 +1705,10 @@ function fitProviders(
     L.latLngBounds(
       list.map(
         function(item) {
+
           return [
             item.latitude,
-            item.longitude
+            item.longitude,
           ];
         }
       )
@@ -742,10 +1719,16 @@ function fitProviders(
 
     {
       paddingTopLeft:
-        [35, 155],
+        [
+          30,
+          165,
+        ],
 
       paddingBottomRight:
-        [35, 120],
+        [
+          30,
+          145,
+        ],
 
       maxZoom:
         15,
@@ -754,7 +1737,7 @@ function fitProviders(
         true,
 
       duration:
-        0.70
+        0.70,
     }
   );
 }
@@ -771,13 +1754,14 @@ function setUserLocation(
   const coords =
     [
       latitude,
-      longitude
+      longitude,
     ];
 
   if (!userMarker) {
 
     const icon =
       L.divIcon({
+
         className:
           '',
 
@@ -785,10 +1769,16 @@ function setUserLocation(
           '<div class="user-location"></div>',
 
         iconSize:
-          [18, 18],
+          [
+            18,
+            18,
+          ],
 
         iconAnchor:
-          [9, 9]
+          [
+            9,
+            9,
+          ],
       });
 
     userMarker =
@@ -803,9 +1793,11 @@ function setUserLocation(
             false,
 
           zIndexOffset:
-            1000
+            1000,
         }
-      ).addTo(map);
+      ).addTo(
+        map
+      );
 
   } else {
 
@@ -832,14 +1824,14 @@ function centerOnUser(
   map.flyTo(
     [
       latitude,
-      longitude
+      longitude,
     ],
 
     15,
 
     {
       duration:
-        0.70
+        0.70,
     }
   );
 }
@@ -855,7 +1847,10 @@ function focusProvider(
   const provider =
     providers.find(
       function(item) {
-        return item.id === id;
+
+        return (
+          item.id === id
+        );
       }
     );
 
@@ -898,6 +1893,28 @@ function resetMap() {
     }
   );
 
+  checkpoints.forEach(
+    function(checkpoint) {
+
+      const marker =
+        checkpointMarkerMap[
+          checkpoint.id
+        ];
+
+      if (
+        marker &&
+        !map.hasLayer(
+          marker
+        )
+      ) {
+
+        marker.addTo(
+          map
+        );
+      }
+    }
+  );
+
   fitProviders(
     providers
   );
@@ -905,6 +1922,9 @@ function resetMap() {
 
 /* =====================================================
    FILTER CATEGORY
+   -----------------------------------------------------
+   IMPORTANT:
+   Checkpoint markers always remain visible.
 ===================================================== */
 
 function filterCategory(
@@ -980,6 +2000,28 @@ function filterCategory(
     }
   );
 
+  checkpoints.forEach(
+    function(checkpoint) {
+
+      const marker =
+        checkpointMarkerMap[
+          checkpoint.id
+        ];
+
+      if (
+        marker &&
+        !map.hasLayer(
+          marker
+        )
+      ) {
+
+        marker.addTo(
+          map
+        );
+      }
+    }
+  );
+
   fitProviders(
     visible
   );
@@ -996,7 +2038,8 @@ function handleNativeMessage(
   try {
 
     const data =
-      typeof rawMessage === 'string'
+      typeof rawMessage ===
+      'string'
         ? JSON.parse(
             rawMessage
           )
@@ -1117,6 +2160,7 @@ setTimeout(
 </script>
 
 </body>
+
 </html>
 `;
 }
@@ -1154,15 +2198,26 @@ export default function MapScreen() {
   const [
     selectedId,
     setSelectedId,
-  ] = useState<string | null>(
+  ] = useState<
+    string | null
+  >(
     initialId ??
     null
   );
 
   const [
+    selectedCheckpointId,
+    setSelectedCheckpointId,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
     activeCategory,
     setActiveCategory,
-  ] = useState<string | null>(
+  ] = useState<
+    string | null
+  >(
     initialCategory ??
     null
   );
@@ -1197,6 +2252,24 @@ export default function MapScreen() {
     );
 
   /* =======================================================
+     SELECTED CHECKPOINT
+  ======================================================= */
+
+  const selectedCheckpoint =
+    useMemo(
+      () =>
+        mapCheckpoints.find(
+          (item) =>
+            item.id ===
+            selectedCheckpointId
+        ) ?? null,
+
+      [
+        selectedCheckpointId,
+      ]
+    );
+
+  /* =======================================================
      VISIBLE PROVIDERS
   ======================================================= */
 
@@ -1221,6 +2294,37 @@ export default function MapScreen() {
     );
 
   /* =======================================================
+     CHECKPOINT STATS
+  ======================================================= */
+
+  const checkpointStats =
+    useMemo(
+      () => {
+
+        const open =
+          mapCheckpoints.filter(
+            (item) =>
+              item.status ===
+              'open'
+          ).length;
+
+        const closed =
+          mapCheckpoints.filter(
+            (item) =>
+              item.status ===
+              'closed'
+          ).length;
+
+        return {
+          open,
+          closed,
+        };
+      },
+
+      []
+    );
+
+  /* =======================================================
      MAP HTML
   ======================================================= */
 
@@ -1228,7 +2332,8 @@ export default function MapScreen() {
     useMemo(
       () =>
         buildMapHtml(
-          mapProviders
+          mapProviders,
+          mapCheckpoints
         ),
 
       []
@@ -1250,7 +2355,8 @@ export default function MapScreen() {
           try {
 
             const permission =
-              await Location.requestForegroundPermissionsAsync();
+              await Location
+                .requestForegroundPermissionsAsync();
 
             if (!mounted) {
               return;
@@ -1269,12 +2375,13 @@ export default function MapScreen() {
             }
 
             const current =
-              await Location.getCurrentPositionAsync(
-                {
-                  accuracy:
-                    Location.Accuracy.Balanced,
-                }
-              );
+              await Location
+                .getCurrentPositionAsync(
+                  {
+                    accuracy:
+                      Location.Accuracy.Balanced,
+                  }
+                );
 
             if (!mounted) {
               return;
@@ -1283,10 +2390,12 @@ export default function MapScreen() {
             setUserLocation(
               {
                 latitude:
-                  current.coords.latitude,
+                  current.coords
+                    .latitude,
 
                 longitude:
-                  current.coords.longitude,
+                  current.coords
+                    .longitude,
               }
             );
 
@@ -1304,9 +2413,10 @@ export default function MapScreen() {
       void requestLocation();
 
       return () => {
-        mounted = false;
-      };
 
+        mounted =
+          false;
+      };
     },
 
     []
@@ -1320,12 +2430,18 @@ export default function MapScreen() {
     payload: Record<
       string,
       string | number | null
-    >
+    >,
+    force = false
   ) => {
 
     if (
-      !webViewReady
+      !webViewRef.current ||
+      (
+        !webViewReady &&
+        !force
+      )
     ) {
+
       return;
     }
 
@@ -1334,25 +2450,23 @@ export default function MapScreen() {
         payload
       );
 
-    const script =
-      `
-        if (
-          typeof handleNativeMessage ===
-          'function'
-        ) {
+    const script = `
+      if (
+        typeof handleNativeMessage ===
+        'function'
+      ) {
 
-          handleNativeMessage(
-            ${JSON.stringify(
-        payloadJson
-      )}
-          );
+        handleNativeMessage(
+          ${JSON.stringify(
+      payloadJson
+    )}
+        );
+      }
 
-        }
+      true;
+    `;
 
-        true;
-      `;
-
-    webViewRef.current?.injectJavaScript(
+    webViewRef.current.injectJavaScript(
       script
     );
   };
@@ -1380,15 +2494,15 @@ export default function MapScreen() {
 
                 id:
                   initialId,
-              }
+              },
+
+              true
             );
 
             return;
           }
 
-          if (
-            initialCategory
-          ) {
+          if (initialCategory) {
 
             sendToMap(
               {
@@ -1397,15 +2511,15 @@ export default function MapScreen() {
 
                 categoryId:
                   initialCategory,
-              }
+              },
+
+              true
             );
 
             return;
           }
 
-          if (
-            userLocation
-          ) {
+          if (userLocation) {
 
             sendToMap(
               {
@@ -1417,7 +2531,9 @@ export default function MapScreen() {
 
                 longitude:
                   userLocation.longitude,
-              }
+              },
+
+              true
             );
           }
 
@@ -1453,6 +2569,10 @@ export default function MapScreen() {
             data.id
           );
 
+          setSelectedCheckpointId(
+            null
+          );
+
           return;
         }
 
@@ -1464,9 +2584,38 @@ export default function MapScreen() {
           setSelectedId(
             null
           );
+
+          return;
+        }
+
+        if (
+          data.type ===
+          'checkpointSelected'
+        ) {
+
+          setSelectedCheckpointId(
+            data.id
+          );
+
+          setSelectedId(
+            null
+          );
+
+          return;
+        }
+
+        if (
+          data.type ===
+          'checkpointDeselected'
+        ) {
+
+          setSelectedCheckpointId(
+            null
+          );
         }
 
       } catch {
+
         // Ignore invalid messages.
       }
     };
@@ -1475,51 +2624,57 @@ export default function MapScreen() {
      CATEGORY
   ======================================================= */
 
-  const selectCategory =
-    (
-      categoryId: string | null
-    ) => {
+  const selectCategory = (
+    categoryId: string | null
+  ) => {
 
-      setSelectedId(
-        null
-      );
+    setSelectedId(
+      null
+    );
 
-      setActiveCategory(
-        categoryId
-      );
+    setSelectedCheckpointId(
+      null
+    );
 
-      sendToMap(
-        {
-          type:
-            'filterCategory',
+    setActiveCategory(
+      categoryId
+    );
 
-          categoryId,
-        }
-      );
-    };
+    sendToMap(
+      {
+        type:
+          'filterCategory',
+
+        categoryId,
+      }
+    );
+  };
 
   /* =======================================================
      RESET
   ======================================================= */
 
-  const resetMap =
-    () => {
+  const resetMap = () => {
 
-      setSelectedId(
-        null
-      );
+    setSelectedId(
+      null
+    );
 
-      setActiveCategory(
-        null
-      );
+    setSelectedCheckpointId(
+      null
+    );
 
-      sendToMap(
-        {
-          type:
-            'resetMap',
-        }
-      );
-    };
+    setActiveCategory(
+      null
+    );
+
+    sendToMap(
+      {
+        type:
+          'resetMap',
+      }
+    );
+  };
 
   /* =======================================================
      CENTER ON USER
@@ -1535,7 +2690,8 @@ export default function MapScreen() {
         ) {
 
           const permission =
-            await Location.requestForegroundPermissionsAsync();
+            await Location
+              .requestForegroundPermissionsAsync();
 
           if (
             permission.status !==
@@ -1557,20 +2713,23 @@ export default function MapScreen() {
         }
 
         const current =
-          await Location.getCurrentPositionAsync(
-            {
-              accuracy:
-                Location.Accuracy.Balanced,
-            }
-          );
+          await Location
+            .getCurrentPositionAsync(
+              {
+                accuracy:
+                  Location.Accuracy.Balanced,
+              }
+            );
 
         const location =
         {
           latitude:
-            current.coords.latitude,
+            current.coords
+              .latitude,
 
           longitude:
-            current.coords.longitude,
+            current.coords
+              .longitude,
         };
 
         setUserLocation(
@@ -1578,6 +2737,10 @@ export default function MapScreen() {
         );
 
         setSelectedId(
+          null
+        );
+
+        setSelectedCheckpointId(
           null
         );
 
@@ -1598,6 +2761,7 @@ export default function MapScreen() {
 
         Alert.alert(
           'تعذر تحديد الموقع',
+
           'حاول مرة أخرى.'
         );
       }
@@ -1614,6 +2778,7 @@ export default function MapScreen() {
         !webViewReady ||
         !userLocation
       ) {
+
         return;
       }
 
@@ -1629,7 +2794,6 @@ export default function MapScreen() {
             userLocation.longitude,
         }
       );
-
     },
 
     [
@@ -1642,71 +2806,67 @@ export default function MapScreen() {
      DIRECTIONS
   ======================================================= */
 
-  const openDirections =
-    (
-      craftsman: Craftsman
-    ) => {
+  const openDirections = (
+    craftsman: Craftsman
+  ) => {
 
-      const url =
-        `https://www.google.com/maps/dir/?api=1` +
-        `&destination=${craftsman.latitude},${craftsman.longitude}`;
+    const url =
+      `https://www.google.com/maps/dir/?api=1` +
+      `&destination=${craftsman.latitude},${craftsman.longitude}`;
 
-      Linking.openURL(
-        url
-      ).catch(
-        () => {
+    Linking.openURL(
+      url
+    ).catch(
+      () => {
 
-          Alert.alert(
-            'تعذر فتح الاتجاهات',
+        Alert.alert(
+          'تعذر فتح الاتجاهات',
 
-            'تأكد من وجود تطبيق خرائط على جهازك.'
-          );
-        }
-      );
-    };
+          'تأكد من وجود تطبيق خرائط على جهازك.'
+        );
+      }
+    );
+  };
 
   /* =======================================================
      PROFILE
   ======================================================= */
 
-  const openProfile =
-    (
-      craftsman: Craftsman
-    ) => {
+  const openProfile = (
+    craftsman: Craftsman
+  ) => {
 
-      router.push(
-        {
-          pathname:
-            '/profile/[id]',
+    router.push(
+      {
+        pathname:
+          '/profile/[id]',
 
-          params:
-          {
-            id:
-              craftsman.id,
-          },
-        }
-      );
-    };
+        params: {
+          id:
+            craftsman.id,
+        },
+      }
+    );
+  };
 
   /* =======================================================
      CATEGORY COUNT
   ======================================================= */
 
-  const getCategoryCount =
-    (
-      categoryId: string
-    ) => {
+  const getCategoryCount = (
+    categoryId: string
+  ) => {
 
-      return craftsmen.filter(
-        (
-          item
-        ) =>
-          item.categoryIds
-            .includes(
-              categoryId
-            )
-      ).length;
-    };
+    return craftsmen.filter(
+      (
+        item
+      ) =>
+        item.categoryIds
+          .includes(
+            categoryId
+          )
+    ).length;
+  };
 
   /* =======================================================
      WEB FALLBACK
@@ -1741,7 +2901,9 @@ export default function MapScreen() {
           >
 
             <MapPinned
-              size={32}
+              size={
+                32
+              }
               color={
                 colors.primary
               }
@@ -1770,7 +2932,7 @@ export default function MapScreen() {
             }
           >
             افتح مهنتي على Android
-            لمشاهدة الخريطة التفاعلية.
+            لمشاهدة الخريطة التفاعلية والحواجز.
           </Txt>
 
         </View>
@@ -1819,6 +2981,7 @@ export default function MapScreen() {
           ]}
 
           javaScriptEnabled
+
           domStorageEnabled
 
           scrollEnabled={
@@ -1859,110 +3022,233 @@ export default function MapScreen() {
         />
 
         {/* =================================================
-            LOCATION BADGE
+            MAP LOADING
         ================================================= */}
 
-        <View
-          style={[
-            styles.topOverlay,
-            shadows.level2,
-          ]}
-        >
+        {!webViewReady && (
 
           <View
             style={
-              styles.locationBadge
+              styles.loadingOverlay
             }
+
+            pointerEvents="none"
           >
 
             <View
               style={
-                styles.locationDot
+                styles.loadingCard
               }
-            />
+            >
 
-            <View>
+              <View
+                style={
+                  styles.loadingIcon
+                }
+              >
+
+                <MapPinned
+                  size={
+                    20
+                  }
+                  color={
+                    colors.primary
+                  }
+                />
+
+              </View>
+
+              <View
+                style={
+                  styles.loadingTextWrap
+                }
+              >
+
+                <Txt
+                  variant="label"
+                  weight="700"
+                >
+                  تجهيز الخريطة
+                </Txt>
+
+                <Txt
+                  variant="small"
+                  color={
+                    colors.muted
+                  }
+                >
+                  نبحث عن الخدمات ونقاط العبور
+                </Txt>
+
+              </View>
+
+              <ActivityIndicator
+                size="small"
+                color={
+                  colors.primary
+                }
+              />
+
+            </View>
+
+          </View>
+        )}
+
+        {/* =================================================
+            TOP INFO
+        ================================================= */}
+
+        <View
+          style={
+            styles.topOverlay
+          }
+
+          pointerEvents="box-none"
+        >
+
+          <View
+            style={
+              styles.topRow
+            }
+          >
+
+            <View
+              style={[
+                styles.locationBadge,
+                shadows.level2,
+              ]}
+            >
+
+              <View
+                style={[
+                  styles.locationIndicator,
+                  userLocation &&
+                  styles.locationIndicatorActive,
+                ]}
+              />
+
+              <View
+                style={
+                  styles.locationContent
+                }
+              >
+
+                <Txt
+                  variant="labelSm"
+                  weight="700"
+                  color={
+                    colors.primary
+                  }
+                  numberOfLines={
+                    1
+                  }
+                >
+                  {userLocation
+                    ? 'موقعك الحالي'
+                    : 'رام الله والبيرة'}
+                </Txt>
+
+                <Txt
+                  variant="small"
+                  color={
+                    colors.muted
+                  }
+                  numberOfLines={
+                    1
+                  }
+                >
+                  {activeCategory
+                    ? 'عرض نتائج التصنيف المختار'
+                    : 'الخدمات والحواجز حولك'}
+                </Txt>
+
+              </View>
+
+            </View>
+
+            <View
+              style={[
+                styles.resultPill,
+                shadows.level2,
+              ]}
+            >
+
+              <View
+                style={
+                  styles.resultDot
+                }
+              />
 
               <Txt
                 variant="labelSm"
                 weight="700"
                 color={
-                  colors.primary
+                  colors.text
                 }
               >
-                رام الله والبيرة
+                {
+                  visibleCraftsmen.length
+                }
               </Txt>
 
               <Txt
-                variant="labelSm"
+                variant="small"
                 color={
                   colors.muted
                 }
+                style={
+                  styles.resultLabel
+                }
               >
-                استكشف الخدمات القريبة
+                مزود خدمة
               </Txt>
 
             </View>
 
           </View>
 
-        </View>
+          {/* =================================================
+              CATEGORY FILTERS
+          ================================================= */}
 
-        {/* =================================================
-            CATEGORIES
-        ================================================= */}
-
-        <View
-          style={
-            styles.categoryWrapper
-          }
-        >
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={
-              false
-            }
-
-            contentContainerStyle={
-              styles.categoryContent
+          <View
+            style={
+              styles.categoryWrapper
             }
           >
 
-            {/* ALL */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={
+                false
+              }
 
-            <Pressable
-              style={[
-                styles.categoryChip,
-
-                !activeCategory &&
-                styles.categoryChipActive,
-              ]}
-
-              onPress={
-                resetMap
+              contentContainerStyle={
+                styles.categoryContent
               }
             >
 
-              <Txt
-                variant="labelSm"
-                weight="700"
-                color={
-                  !activeCategory
-                    ? colors.white
-                    : colors.text
+              <Pressable
+                style={({
+                  pressed,
+                }) => [
+
+                    styles.categoryChip,
+
+                    !activeCategory &&
+                    styles.categoryChipActive,
+
+                    pressed &&
+                    styles.categoryChipPressed,
+                  ]}
+
+                onPress={
+                  resetMap
                 }
-              >
-                الكل
-              </Txt>
 
-              <View
-                style={[
-                  styles.categoryCount,
+                accessibilityRole="button"
 
-                  !activeCategory &&
-                  styles.categoryCountActive,
-                ]}
+                accessibilityLabel="عرض جميع الخدمات"
               >
 
                 <Txt
@@ -1970,62 +3256,114 @@ export default function MapScreen() {
                   weight="700"
                   color={
                     !activeCategory
-                      ? colors.primary
-                      : colors.muted
+                      ? colors.white
+                      : colors.text
                   }
                 >
-                  {
-                    craftsmen.length
-                  }
+                  الكل
                 </Txt>
 
-              </View>
+                <View
+                  style={[
+                    styles.categoryCount,
 
-            </Pressable>
+                    !activeCategory &&
+                    styles.categoryCountActive,
+                  ]}
+                >
 
-            {/* CATEGORIES */}
-
-            {
-              categories
-                .map(
-                  (
-                    category
-                  ) => {
-
-                    const count =
-                      getCategoryCount(
-                        category.id
-                      );
-
-                    if (
-                      count ===
-                      0
-                    ) {
-                      return null;
+                  <Txt
+                    variant="labelSm"
+                    weight="700"
+                    color={
+                      !activeCategory
+                        ? colors.primary
+                        : colors.muted
                     }
+                  >
+                    {
+                      craftsmen.length
+                    }
+                  </Txt>
 
-                    const active =
-                      activeCategory ===
-                      category.id;
+                </View>
 
-                    return (
-                      <Pressable
-                        key={
-                          category.id
-                        }
+              </Pressable>
 
-                        style={[
+              {categories.map(
+                (
+                  category
+                ) => {
+
+                  const count =
+                    getCategoryCount(
+                      category.id
+                    );
+
+                  if (
+                    count === 0
+                  ) {
+
+                    return null;
+                  }
+
+                  const active =
+                    activeCategory ===
+                    category.id;
+
+                  return (
+                    <Pressable
+                      key={
+                        category.id
+                      }
+
+                      style={({
+                        pressed,
+                      }) => [
+
                           styles.categoryChip,
 
                           active &&
                           styles.categoryChipActive,
+
+                          pressed &&
+                          styles.categoryChipPressed,
                         ]}
 
-                        onPress={() =>
-                          selectCategory(
-                            category.id
-                          )
+                      onPress={() =>
+                        selectCategory(
+                          category.id
+                        )
+                      }
+
+                      accessibilityRole="button"
+
+                      accessibilityLabel={
+                        `تصفية ${category.label}`
+                      }
+                    >
+
+                      <Txt
+                        variant="labelSm"
+                        weight="700"
+                        color={
+                          active
+                            ? colors.white
+                            : colors.text
                         }
+                      >
+                        {
+                          category.label
+                        }
+                      </Txt>
+
+                      <View
+                        style={[
+                          styles.categoryCount,
+
+                          active &&
+                          styles.categoryCountActive,
+                        ]}
                       >
 
                         <Txt
@@ -2033,47 +3371,134 @@ export default function MapScreen() {
                           weight="700"
                           color={
                             active
-                              ? colors.white
-                              : colors.text
+                              ? colors.primary
+                              : colors.muted
                           }
                         >
                           {
-                            category.label
+                            count
                           }
                         </Txt>
 
-                        <View
-                          style={[
-                            styles.categoryCount,
+                      </View>
 
-                            active &&
-                            styles.categoryCountActive,
-                          ]}
-                        >
+                    </Pressable>
+                  );
+                }
+              )}
 
-                          <Txt
-                            variant="labelSm"
-                            weight="700"
-                            color={
-                              active
-                                ? colors.primary
-                                : colors.muted
-                            }
-                          >
-                            {
-                              count
-                            }
-                          </Txt>
+            </ScrollView>
 
-                        </View>
+          </View>
 
-                      </Pressable>
-                    );
+          {/* =================================================
+              CHECKPOINT LEGEND
+          ================================================= */}
+
+          <View
+            style={[
+              styles.checkpointLegend,
+              shadows.level1,
+            ]}
+          >
+
+            <View
+              style={
+                styles.legendTitleRow
+              }
+            >
+
+              <View
+                style={
+                  styles.legendGateIcon
+                }
+              >
+                <View
+                  style={
+                    styles.legendGateRoof
                   }
-                )
-            }
+                />
+                <View
+                  style={
+                    styles.legendGatePostLeft
+                  }
+                />
+                <View
+                  style={
+                    styles.legendGatePostRight
+                  }
+                />
+              </View>
 
-          </ScrollView>
+              <Txt
+                variant="labelSm"
+                weight="800"
+                color={
+                  colors.text
+                }
+              >
+                الحواجز
+              </Txt>
+
+            </View>
+
+            <View
+              style={
+                styles.legendItems
+              }
+            >
+
+              <View
+                style={
+                  styles.legendItem
+                }
+              >
+
+                <View
+                  style={[
+                    styles.legendDot,
+                    styles.legendDotOpen,
+                  ]}
+                />
+
+                <Txt
+                  variant="small"
+                  color={
+                    colors.muted
+                  }
+                >
+                  مفتوح
+                </Txt>
+
+              </View>
+
+              <View
+                style={
+                  styles.legendItem
+                }
+              >
+
+                <View
+                  style={[
+                    styles.legendDot,
+                    styles.legendDotClosed,
+                  ]}
+                />
+
+                <Txt
+                  variant="small"
+                  color={
+                    colors.muted
+                  }
+                >
+                  مغلق
+                </Txt>
+
+              </View>
+
+            </View>
+
+          </View>
 
         </View>
 
@@ -2089,17 +3514,27 @@ export default function MapScreen() {
         >
 
           <Pressable
-            style={
-              styles.controlButton
-            }
+            style={({ pressed }) => [
+
+              styles.controlButton,
+
+              pressed &&
+              styles.controlButtonPressed,
+            ]}
 
             onPress={
               centerOnUser
             }
+
+            accessibilityRole="button"
+
+            accessibilityLabel="تحديد موقعي"
           >
 
             <Crosshair
-              size={21}
+              size={
+                21
+              }
               color={
                 colors.primary
               }
@@ -2114,17 +3549,27 @@ export default function MapScreen() {
           />
 
           <Pressable
-            style={
-              styles.controlButton
-            }
+            style={({ pressed }) => [
+
+              styles.controlButton,
+
+              pressed &&
+              styles.controlButtonPressed,
+            ]}
 
             onPress={
               resetMap
             }
+
+            accessibilityRole="button"
+
+            accessibilityLabel="إظهار جميع مقدمي الخدمة"
           >
 
             <MapPinned
-              size={20}
+              size={
+                20
+              }
               color={
                 colors.primary
               }
@@ -2135,74 +3580,187 @@ export default function MapScreen() {
         </View>
 
         {/* =================================================
-            RESULT COUNT
+            CHECKPOINT SUMMARY
         ================================================= */}
 
-        <View
-          style={[
-            styles.resultPill,
-            shadows.level1,
-          ]}
-        >
+        {!selectedCraftsman &&
+          !selectedCheckpoint && (
 
-          <View
-            style={
-              styles.resultDot
-            }
-          />
-
-          <Txt
-            variant="labelSm"
-            weight="700"
-            color={
-              colors.text
-            }
-          >
-            {
-              visibleCraftsmen.length
-            }{' '}
-            مزود خدمة
-          </Txt>
-
-        </View>
-
-        {/* =================================================
-            HINT
-        ================================================= */}
-
-        {!selectedCraftsman && (
-          <View
-            style={[
-              styles.infoPill,
-              shadows.level1,
-            ]}
-          >
-
-            <Navigation
-              size={15}
-              color={
-                colors.primary
-              }
-            />
-
-            <Txt
-              variant="labelSm"
-              color={
-                colors.muted
-              }
-
-              style={
-                styles.infoText
-              }
+            <View
+              style={[
+                styles.checkpointSummary,
+                shadows.level1,
+              ]}
             >
-              اضغط على أي مزود لعرض التفاصيل
-            </Txt>
 
-          </View>
-        )}
+              <View
+                style={
+                  styles.summaryIcon
+                }
+              >
+
+                <View
+                  style={
+                    styles.summaryGate
+                  }
+                >
+
+                  <View
+                    style={
+                      styles.summaryGateTop
+                    }
+                  />
+
+                  <View
+                    style={
+                      styles.summaryGateLeft
+                    }
+                  />
+
+                  <View
+                    style={
+                      styles.summaryGateRight
+                    }
+                  />
+
+                </View>
+
+              </View>
+
+              <View
+                style={
+                  styles.summaryContent
+                }
+              >
+
+                <Txt
+                  variant="labelSm"
+                  weight="800"
+                  color={
+                    colors.text
+                  }
+                >
+                  حالة الحواجز
+                </Txt>
+
+                <View
+                  style={
+                    styles.summaryStats
+                  }
+                >
+
+                  <View
+                    style={
+                      styles.summaryStat
+                    }
+                  >
+
+                    <View
+                      style={[
+                        styles.summaryDot,
+                        styles.summaryDotOpen,
+                      ]}
+                    />
+
+                    <Txt
+                      variant="small"
+                      color={
+                        colors.muted
+                      }
+                    >
+                      {
+                        checkpointStats.open
+                      }{' '}
+                      مفتوح
+                    </Txt>
+
+                  </View>
+
+                  <View
+                    style={
+                      styles.summaryStat
+                    }
+                  >
+
+                    <View
+                      style={[
+                        styles.summaryDot,
+                        styles.summaryDotClosed,
+                      ]}
+                    />
+
+                    <Txt
+                      variant="small"
+                      color={
+                        colors.muted
+                      }
+                    >
+                      {
+                        checkpointStats.closed
+                      }{' '}
+                      مغلق
+                    </Txt>
+
+                  </View>
+
+                </View>
+
+              </View>
+
+            </View>
+          )}
 
         {/* =================================================
-            SELECTED PROVIDER CARD
+            MAP HINT
+        ================================================= */}
+
+        {!selectedCraftsman &&
+          !selectedCheckpoint && (
+
+            <View
+              style={[
+                styles.infoPill,
+                shadows.level1,
+              ]}
+
+              pointerEvents="none"
+            >
+
+              <View
+                style={
+                  styles.infoIcon
+                }
+              >
+
+                <Navigation
+                  size={
+                    14
+                  }
+                  color={
+                    colors.primary
+                  }
+                />
+
+              </View>
+
+              <Txt
+                variant="labelSm"
+                weight="600"
+                color={
+                  colors.muted
+                }
+                style={
+                  styles.infoText
+                }
+              >
+                اضغط على نقطة أو بوابة لمعرفة التفاصيل
+              </Txt>
+
+            </View>
+          )}
+
+        {/* =================================================
+            SELECTED PROVIDER
         ================================================= */}
 
         {selectedCraftsman && (
@@ -2217,9 +3775,13 @@ export default function MapScreen() {
             {/* CLOSE */}
 
             <Pressable
-              style={
-                styles.closeButton
-              }
+              style={({ pressed }) => [
+
+                styles.closeButton,
+
+                pressed &&
+                styles.closeButtonPressed,
+              ]}
 
               onPress={() => {
 
@@ -2233,12 +3795,17 @@ export default function MapScreen() {
                       'resetMap',
                   }
                 );
-
               }}
+
+              accessibilityRole="button"
+
+              accessibilityLabel="إغلاق معلومات مقدم الخدمة"
             >
 
               <X
-                size={17}
+                size={
+                  17
+                }
                 color={
                   colors.muted
                 }
@@ -2250,7 +3817,7 @@ export default function MapScreen() {
 
             <View
               style={
-                styles.cardTopRow
+                styles.selectedTop
               }
             >
 
@@ -2292,16 +3859,18 @@ export default function MapScreen() {
                     }
                   </Txt>
 
-                  {
-                    selectedCraftsman.verified && (
-                      <CheckCircle2
-                        size={16}
-                        color={
-                          colors.success
-                        }
-                      />
-                    )
-                  }
+                  {selectedCraftsman.verified && (
+
+                    <CheckCircle2
+                      size={
+                        16
+                      }
+                      color={
+                        colors.success
+                      }
+                    />
+
+                  )}
 
                 </View>
 
@@ -2331,7 +3900,9 @@ export default function MapScreen() {
                 >
 
                   <Star
-                    size={14}
+                    size={
+                      14
+                    }
                     color={
                       colors.amber
                     }
@@ -2347,15 +3918,13 @@ export default function MapScreen() {
                       styles.ratingValue
                     }
                   >
-                    {
-                      selectedCraftsman.rating.toFixed(
-                        1
-                      )
-                    }
+                    {selectedCraftsman.rating.toFixed(
+                      1
+                    )}
                   </Txt>
 
                   <Txt
-                    variant="labelSm"
+                    variant="small"
                     color={
                       colors.muted
                     }
@@ -2363,7 +3932,8 @@ export default function MapScreen() {
                     (
                     {
                       selectedCraftsman.reviewCount
-                    }
+                    }{' '}
+                    تقييم
                     )
                   </Txt>
 
@@ -2374,7 +3944,7 @@ export default function MapScreen() {
                   />
 
                   <Txt
-                    variant="labelSm"
+                    variant="small"
                     color={
                       colors.muted
                     }
@@ -2390,27 +3960,6 @@ export default function MapScreen() {
                 </View>
 
               </View>
-
-              <Pressable
-                style={
-                  styles.arrowButton
-                }
-
-                onPress={() =>
-                  openProfile(
-                    selectedCraftsman
-                  )
-                }
-              >
-
-                <ArrowUpRight
-                  size={19}
-                  color={
-                    colors.primary
-                  }
-                />
-
-              </Pressable>
 
             </View>
 
@@ -2428,13 +3977,13 @@ export default function MapScreen() {
                 }
               >
 
-                <Clock3
-                  size={14}
-                  color={
-                    selectedCraftsman.isOpen
-                      ? colors.success
-                      : colors.muted
-                  }
+                <View
+                  style={[
+                    styles.statusIndicator,
+
+                    selectedCraftsman.isOpen &&
+                    styles.statusIndicatorOpen,
+                  ]}
                 />
 
                 <Txt
@@ -2445,24 +3994,41 @@ export default function MapScreen() {
                       ? colors.success
                       : colors.muted
                   }
-
-                  style={
-                    styles.metaText
-                  }
                 >
-                  {
-                    selectedCraftsman.isOpen
-                      ? 'مفتوح الآن'
-                      : 'مغلق حالياً'
-                  }
+                  {selectedCraftsman.isOpen
+                    ? 'مفتوح الآن'
+                    : 'مغلق حالياً'}
                 </Txt>
 
               </View>
 
-              <Txt
-                variant="labelSm"
+              <View
+                style={
+                  styles.metaDivider
+                }
+              />
+
+              <Clock3
+                size={
+                  14
+                }
                 color={
                   colors.muted
+                }
+              />
+
+              <Txt
+                variant="small"
+                color={
+                  colors.muted
+                }
+
+                style={
+                  styles.metaText
+                }
+
+                numberOfLines={
+                  1
                 }
               >
                 {
@@ -2470,40 +4036,91 @@ export default function MapScreen() {
                 }
               </Txt>
 
-              <View
-                style={
-                  styles.metaSpacer
-                }
-              />
+            </View>
+
+            {/* ACTIONS */}
+
+            <View
+              style={
+                styles.actionsRow
+              }
+            >
 
               <Pressable
-                style={
-                  styles.directionButton
+                style={({ pressed }) => [
+
+                  styles.primaryAction,
+
+                  pressed &&
+                  styles.primaryActionPressed,
+                ]}
+
+                onPress={() =>
+                  openProfile(
+                    selectedCraftsman
+                  )
                 }
+
+                accessibilityRole="button"
+
+                accessibilityLabel="عرض الملف المهني"
+              >
+
+                <Txt
+                  variant="label"
+                  weight="700"
+                  color={
+                    colors.white
+                  }
+                >
+                  عرض الملف
+                </Txt>
+
+                <ArrowUpRight
+                  size={
+                    17
+                  }
+                  color={
+                    colors.white
+                  }
+                />
+
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+
+                  styles.secondaryAction,
+
+                  pressed &&
+                  styles.secondaryActionPressed,
+                ]}
 
                 onPress={() =>
                   openDirections(
                     selectedCraftsman
                   )
                 }
+
+                accessibilityRole="button"
+
+                accessibilityLabel="فتح الاتجاهات"
               >
 
                 <Navigation
-                  size={15}
+                  size={
+                    16
+                  }
                   color={
                     colors.primary
                   }
                 />
 
                 <Txt
-                  variant="labelSm"
+                  variant="label"
+                  weight="700"
                   color={
                     colors.primary
-                  }
-                  weight="700"
-
-                  style={
-                    styles.directionText
                   }
                 >
                   الاتجاهات
@@ -2514,7 +4131,356 @@ export default function MapScreen() {
             </View>
 
           </View>
+        )}
 
+        {/* =================================================
+            SELECTED CHECKPOINT
+        ================================================= */}
+
+        {selectedCheckpoint && (
+
+          <View
+            style={[
+              styles.checkpointCard,
+              shadows.level3,
+            ]}
+          >
+
+            {/* CLOSE */}
+
+            <Pressable
+              style={({ pressed }) => [
+
+                styles.closeButton,
+
+                pressed &&
+                styles.closeButtonPressed,
+              ]}
+
+              onPress={() => {
+
+                setSelectedCheckpointId(
+                  null
+                );
+
+                sendToMap(
+                  {
+                    type:
+                      'resetMap',
+                  }
+                );
+              }}
+
+              accessibilityRole="button"
+
+              accessibilityLabel="إغلاق معلومات الحاجز"
+            >
+
+              <X
+                size={
+                  17
+                }
+                color={
+                  colors.muted
+                }
+              />
+
+            </Pressable>
+
+            {/* HEADER */}
+
+            <View
+              style={
+                styles.checkpointCardHeader
+              }
+            >
+
+              <View
+                style={[
+                  styles.checkpointCardIcon,
+
+                  selectedCheckpoint.status ===
+                    'open'
+                    ? styles.checkpointCardIconOpen
+                    : styles.checkpointCardIconClosed,
+                ]}
+              >
+
+                <View
+                  style={
+                    styles.cardGate
+                  }
+                >
+
+                  <View
+                    style={
+                      styles.cardGateTop
+                    }
+                  />
+
+                  <View
+                    style={
+                      styles.cardGateLeft
+                    }
+                  />
+
+                  <View
+                    style={
+                      styles.cardGateRight
+                    }
+                  />
+
+                  <View
+                    style={[
+                      styles.cardGateBar,
+
+                      selectedCheckpoint.status ===
+                        'open'
+                        ? styles.cardGateBarOpen
+                        : styles.cardGateBarClosed,
+                    ]}
+                  />
+
+                </View>
+
+              </View>
+
+              <View
+                style={
+                  styles.checkpointCardInfo
+                }
+              >
+
+                <Txt
+                  variant="label"
+                  weight="800"
+                  color={
+                    colors.text
+                  }
+
+                  numberOfLines={
+                    1
+                  }
+                >
+                  {
+                    selectedCheckpoint.name
+                  }
+                </Txt>
+
+                <Txt
+                  variant="small"
+                  color={
+                    colors.muted
+                  }
+
+                  style={
+                    styles.checkpointCardArea
+                  }
+                >
+                  {
+                    selectedCheckpoint.area
+                  }
+                </Txt>
+
+              </View>
+
+            </View>
+
+            {/* STATUS */}
+
+            <View
+              style={
+                styles.checkpointStatusBox
+              }
+            >
+
+              <View
+                style={
+                  styles.checkpointStatusLeft
+                }
+              >
+
+                <View
+                  style={[
+                    styles.checkpointStatusDot,
+
+                    selectedCheckpoint.status ===
+                      'open'
+                      ? styles.checkpointStatusDotOpen
+                      : styles.checkpointStatusDotClosed,
+                  ]}
+                />
+
+                <Txt
+                  variant="label"
+                  weight="800"
+                  color={
+                    selectedCheckpoint.status ===
+                      'open'
+                      ? colors.success
+                      : colors.error
+                  }
+                >
+                  {selectedCheckpoint.status ===
+                    'open'
+                    ? 'مفتوح'
+                    : 'مغلق'}
+                </Txt>
+
+              </View>
+
+              <View
+                style={
+                  styles.checkpointLiveBadge
+                }
+              >
+
+                <Txt
+                  variant="small"
+                  color={
+                    colors.muted
+                  }
+                >
+                  الحالة الحالية
+                </Txt>
+
+              </View>
+
+            </View>
+
+            {/* DETAILS */}
+
+            <View
+              style={
+                styles.checkpointDetails
+              }
+            >
+
+              <View
+                style={
+                  styles.checkpointDetail
+                }
+              >
+
+                <MapPinned
+                  size={
+                    15
+                  }
+                  color={
+                    colors.primary
+                  }
+                />
+
+                <View
+                  style={
+                    styles.checkpointDetailText
+                  }
+                >
+
+                  <Txt
+                    variant="small"
+                    color={
+                      colors.muted
+                    }
+                  >
+                    المنطقة
+                  </Txt>
+
+                  <Txt
+                    variant="labelSm"
+                    weight="700"
+                    color={
+                      colors.text
+                    }
+                  >
+                    {
+                      selectedCheckpoint.area
+                    }
+                  </Txt>
+
+                </View>
+
+              </View>
+
+              <View
+                style={
+                  styles.checkpointDetail
+                }
+              >
+
+                <Clock3
+                  size={
+                    15
+                  }
+                  color={
+                    colors.primary
+                  }
+                />
+
+                <View
+                  style={
+                    styles.checkpointDetailText
+                  }
+                >
+
+                  <Txt
+                    variant="small"
+                    color={
+                      colors.muted
+                    }
+                  >
+                    آخر تحديث
+                  </Txt>
+
+                  <Txt
+                    variant="labelSm"
+                    weight="700"
+                    color={
+                      colors.text
+                    }
+                  >
+                    {
+                      selectedCheckpoint.lastUpdated
+                    }
+                  </Txt>
+
+                </View>
+
+              </View>
+
+            </View>
+
+            {/* DISCLAIMER */}
+
+            <View
+              style={
+                styles.checkpointDemoNotice
+              }
+            >
+
+              <View
+                style={
+                  styles.checkpointDemoDot
+                }
+              />
+
+              <Txt
+                variant="small"
+                color={
+                  colors.muted
+                }
+
+                style={
+                  styles.checkpointDemoText
+                }
+              >
+                هذه حالة تجريبية في النسخة الحالية. عند ربط الـAPI
+                ستظهر حالة الحاجز وتحديثها من المصدر الفعلي.
+              </Txt>
+
+            </View>
+
+          </View>
         )}
 
       </View>
@@ -2531,47 +4497,53 @@ const styles =
   StyleSheet.create({
 
     screen: {
-      flex: 1,
+      flex:
+        1,
+
       backgroundColor:
         colors.canvas,
     },
 
     mapArea: {
-      flex: 1,
+      flex:
+        1,
+
       position:
         'relative',
+
       overflow:
         'hidden',
     },
 
     map: {
-      flex: 1,
+      flex:
+        1,
+
       backgroundColor:
         colors.canvas,
     },
 
     /* ===============================================
-       LOCATION
+       LOADING
     =============================================== */
 
-    topOverlay: {
-      position:
-        'absolute',
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
 
-      top:
-        12,
+      alignItems:
+        'center',
 
-      left:
-        14,
+      justifyContent:
+        'center',
 
-      right:
-        14,
+      backgroundColor:
+        colors.canvas,
+
+      zIndex:
+        30,
     },
 
-    locationBadge: {
-      alignSelf:
-        'flex-start',
-
+    loadingCard: {
       flexDirection:
         'row-reverse',
 
@@ -2588,10 +4560,98 @@ const styles =
         14,
 
       paddingVertical:
+        12,
+
+      marginHorizontal:
+        30,
+
+      ...shadows.level2,
+    },
+
+    loadingIcon: {
+      width:
+        40,
+
+      height:
+        40,
+
+      borderRadius:
+        13,
+
+      backgroundColor:
+        colors.tintStrong,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    loadingTextWrap: {
+      flex:
+        1,
+
+      marginHorizontal:
         10,
     },
 
-    locationDot: {
+    /* ===============================================
+       TOP
+    =============================================== */
+
+    topOverlay: {
+      position:
+        'absolute',
+
+      top:
+        12,
+
+      left:
+        12,
+
+      right:
+        12,
+
+      zIndex:
+        10,
+    },
+
+    topRow: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+    },
+
+    locationBadge: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      maxWidth:
+        '78%',
+
+      backgroundColor:
+        colors.white,
+
+      borderRadius:
+        radius.xl,
+
+      paddingHorizontal:
+        12,
+
+      paddingVertical:
+        9,
+    },
+
+    locationIndicator: {
       width:
         9,
 
@@ -2602,39 +4662,82 @@ const styles =
         5,
 
       backgroundColor:
-        colors.success,
+        colors.border,
 
       marginLeft:
         9,
     },
 
+    locationIndicatorActive: {
+      backgroundColor:
+        colors.success,
+    },
+
+    locationContent: {
+      flexShrink:
+        1,
+    },
+
+    resultPill: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      backgroundColor:
+        colors.white,
+
+      borderRadius:
+        radius.full,
+
+      paddingHorizontal:
+        11,
+
+      paddingVertical:
+        9,
+    },
+
+    resultDot: {
+      width:
+        7,
+
+      height:
+        7,
+
+      borderRadius:
+        4,
+
+      backgroundColor:
+        colors.success,
+
+      marginLeft:
+        7,
+    },
+
+    resultLabel: {
+      marginRight:
+        3,
+    },
+
     /* ===============================================
-       CATEGORIES
+       FILTERS
     =============================================== */
 
     categoryWrapper: {
-      position:
-        'absolute',
-
-      top:
-        72,
-
-      left:
-        0,
-
-      right:
-        0,
+      marginTop:
+        10,
     },
 
     categoryContent: {
       flexDirection:
         'row-reverse',
 
-      paddingHorizontal:
-        13,
-
       gap:
-        8,
+        7,
+
+      paddingHorizontal:
+        1,
     },
 
     categoryChip: {
@@ -2651,10 +4754,10 @@ const styles =
         radius.full,
 
       paddingHorizontal:
-        13,
+        12,
 
       paddingVertical:
-        9,
+        8,
 
       borderWidth:
         1,
@@ -2669,6 +4772,11 @@ const styles =
 
       borderColor:
         colors.primary,
+    },
+
+    categoryChipPressed: {
+      opacity:
+        0.82,
     },
 
     categoryCount: {
@@ -2700,6 +4808,173 @@ const styles =
     },
 
     /* ===============================================
+       CHECKPOINT LEGEND
+    =============================================== */
+
+    checkpointLegend: {
+      alignSelf:
+        'flex-start',
+
+      marginTop:
+        9,
+
+      backgroundColor:
+        colors.white,
+
+      borderRadius:
+        radius.lg,
+
+      paddingHorizontal:
+        10,
+
+      paddingVertical:
+        8,
+
+      borderWidth:
+        1,
+
+      borderColor:
+        colors.border,
+    },
+
+    legendTitleRow: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      marginBottom:
+        5,
+    },
+
+    legendGateIcon: {
+      width:
+        23,
+
+      height:
+        22,
+
+      position:
+        'relative',
+
+      marginLeft:
+        6,
+    },
+
+    legendGateRoof: {
+      position:
+        'absolute',
+
+      top:
+        2,
+
+      left:
+        3,
+
+      right:
+        3,
+
+      height:
+        5,
+
+      borderRadius:
+        2,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    legendGatePostLeft: {
+      position:
+        'absolute',
+
+      left:
+        4,
+
+      top:
+        6,
+
+      bottom:
+        1,
+
+      width:
+        4,
+
+      borderRadius:
+        2,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    legendGatePostRight: {
+      position:
+        'absolute',
+
+      right:
+        4,
+
+      top:
+        6,
+
+      bottom:
+        1,
+
+      width:
+        4,
+
+      borderRadius:
+        2,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    legendItems: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      gap:
+        10,
+    },
+
+    legendItem: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+    },
+
+    legendDot: {
+      width:
+        7,
+
+      height:
+        7,
+
+      borderRadius:
+        4,
+
+      marginLeft:
+        4,
+    },
+
+    legendDotOpen: {
+      backgroundColor:
+        colors.success,
+    },
+
+    legendDotClosed: {
+      backgroundColor:
+        colors.error,
+    },
+
+    /* ===============================================
        MAP CONTROLS
     =============================================== */
 
@@ -2708,10 +4983,10 @@ const styles =
         'absolute',
 
       right:
-        14,
+        12,
 
       top:
-        132,
+        133,
 
       backgroundColor:
         colors.white,
@@ -2737,6 +5012,11 @@ const styles =
         'center',
     },
 
+    controlButtonPressed: {
+      backgroundColor:
+        colors.tint,
+    },
+
     controlDivider: {
       height:
         1,
@@ -2749,18 +5029,202 @@ const styles =
     },
 
     /* ===============================================
-       RESULT
+       CHECKPOINT SUMMARY
     =============================================== */
 
-    resultPill: {
+    checkpointSummary: {
       position:
         'absolute',
 
       left:
-        14,
+        12,
+
+      bottom:
+        78,
+
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      backgroundColor:
+        colors.white,
+
+      borderRadius:
+        radius.xl,
+
+      paddingHorizontal:
+        10,
+
+      paddingVertical:
+        9,
+    },
+
+    summaryIcon: {
+      width:
+        38,
+
+      height:
+        38,
+
+      borderRadius:
+        12,
+
+      backgroundColor:
+        colors.tintStrong,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    summaryGate: {
+      width:
+        19,
+
+      height:
+        22,
+
+      position:
+        'relative',
+    },
+
+    summaryGateTop: {
+      position:
+        'absolute',
 
       top:
-        132,
+        1,
+
+      left:
+        1,
+
+      right:
+        1,
+
+      height:
+        5,
+
+      borderRadius:
+        2,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    summaryGateLeft: {
+      position:
+        'absolute',
+
+      left:
+        2,
+
+      top:
+        5,
+
+      bottom:
+        1,
+
+      width:
+        4,
+
+      borderRadius:
+        2,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    summaryGateRight: {
+      position:
+        'absolute',
+
+      right:
+        2,
+
+      top:
+        5,
+
+      bottom:
+        1,
+
+      width:
+        4,
+
+      borderRadius:
+        2,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    summaryContent: {
+      marginRight:
+        8,
+    },
+
+    summaryStats: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      gap:
+        9,
+
+      marginTop:
+        2,
+    },
+
+    summaryStat: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+    },
+
+    summaryDot: {
+      width:
+        6,
+
+      height:
+        6,
+
+      borderRadius:
+        3,
+
+      marginLeft:
+        4,
+    },
+
+    summaryDotOpen: {
+      backgroundColor:
+        colors.success,
+    },
+
+    summaryDotClosed: {
+      backgroundColor:
+        colors.error,
+    },
+
+    /* ===============================================
+       HINT
+    =============================================== */
+
+    infoPill: {
+      position:
+        'absolute',
+
+      bottom:
+        17,
+
+      alignSelf:
+        'center',
 
       flexDirection:
         'row-reverse',
@@ -2781,54 +5245,24 @@ const styles =
         8,
     },
 
-    resultDot: {
+    infoIcon: {
       width:
-        7,
+        28,
 
       height:
-        7,
+        28,
 
       borderRadius:
-        4,
+        14,
 
       backgroundColor:
-        colors.success,
-
-      marginLeft:
-        7,
-    },
-
-    /* ===============================================
-       INFO
-    =============================================== */
-
-    infoPill: {
-      position:
-        'absolute',
-
-      bottom:
-        18,
-
-      alignSelf:
-        'center',
-
-      flexDirection:
-        'row-reverse',
+        colors.tintStrong,
 
       alignItems:
         'center',
 
-      backgroundColor:
-        colors.white,
-
-      borderRadius:
-        radius.full,
-
-      paddingHorizontal:
-        13,
-
-      paddingVertical:
-        8,
+      justifyContent:
+        'center',
     },
 
     infoText: {
@@ -2837,7 +5271,7 @@ const styles =
     },
 
     /* ===============================================
-       SELECTED CARD
+       SELECTED PROVIDER
     =============================================== */
 
     selectedCard: {
@@ -2851,7 +5285,7 @@ const styles =
         12,
 
       bottom:
-        14,
+        12,
 
       backgroundColor:
         colors.white,
@@ -2868,22 +5302,22 @@ const styles =
         'absolute',
 
       top:
-        9,
+        10,
 
       right:
-        9,
+        10,
 
       zIndex:
         20,
 
       width:
-        30,
+        31,
 
       height:
-        30,
+        31,
 
       borderRadius:
-        15,
+        16,
 
       backgroundColor:
         colors.canvas,
@@ -2895,20 +5329,28 @@ const styles =
         'center',
     },
 
-    cardTopRow: {
+    closeButtonPressed: {
+      backgroundColor:
+        colors.tint,
+    },
+
+    selectedTop: {
       flexDirection:
         'row-reverse',
 
       alignItems:
         'flex-start',
+
+      paddingRight:
+        34,
     },
 
     avatar: {
       width:
-        56,
+        58,
 
       height:
-        56,
+        58,
 
       borderRadius:
         18,
@@ -2921,11 +5363,11 @@ const styles =
       flex:
         1,
 
-      marginHorizontal:
-        10,
-
       minWidth:
         0,
+
+      marginRight:
+        10,
     },
 
     nameRow: {
@@ -2934,6 +5376,9 @@ const styles =
 
       alignItems:
         'center',
+
+      paddingRight:
+        0,
     },
 
     name: {
@@ -2979,27 +5424,7 @@ const styles =
         colors.border,
 
       marginHorizontal:
-        8,
-    },
-
-    arrowButton: {
-      width:
-        40,
-
-      height:
-        40,
-
-      borderRadius:
-        20,
-
-      backgroundColor:
-        colors.tintStrong,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
+        7,
     },
 
     selectedMetaRow: {
@@ -3010,10 +5435,10 @@ const styles =
         'center',
 
       marginTop:
-        13,
+        12,
 
       paddingTop:
-        11,
+        10,
 
       borderTopWidth:
         1,
@@ -3030,39 +5455,512 @@ const styles =
         'center',
     },
 
+    statusIndicator: {
+      width:
+        7,
+
+      height:
+        7,
+
+      borderRadius:
+        4,
+
+      backgroundColor:
+        colors.border,
+
+      marginLeft:
+        6,
+    },
+
+    statusIndicatorOpen: {
+      backgroundColor:
+        colors.success,
+    },
+
+    metaDivider: {
+      width:
+        1,
+
+      height:
+        15,
+
+      backgroundColor:
+        colors.border,
+
+      marginHorizontal:
+        9,
+    },
+
     metaText: {
       marginRight:
         5,
-    },
 
-    metaSpacer: {
-      flex:
+      flexShrink:
         1,
     },
 
-    directionButton: {
+    actionsRow: {
+      flexDirection:
+        'row-reverse',
+
+      gap:
+        8,
+
+      marginTop:
+        12,
+    },
+
+    primaryAction: {
+      flex:
+        1,
+
+      minHeight:
+        45,
+
+      borderRadius:
+        radius.md,
+
+      backgroundColor:
+        colors.primary,
+
       flexDirection:
         'row-reverse',
 
       alignItems:
         'center',
 
-      backgroundColor:
-        colors.tintStrong,
+      justifyContent:
+        'center',
+
+      gap:
+        6,
+    },
+
+    primaryActionPressed: {
+      opacity:
+        0.88,
+    },
+
+    secondaryAction: {
+      flex:
+        0.78,
+
+      minHeight:
+        45,
 
       borderRadius:
         radius.md,
 
-      paddingHorizontal:
-        11,
+      backgroundColor:
+        colors.tintStrong,
 
-      paddingVertical:
-        8,
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      gap:
+        5,
     },
 
-    directionText: {
-      marginRight:
+    secondaryActionPressed: {
+      backgroundColor:
+        colors.tint,
+    },
+
+    /* ===============================================
+       CHECKPOINT CARD
+    =============================================== */
+
+    checkpointCard: {
+      position:
+        'absolute',
+
+      left:
+        12,
+
+      right:
+        12,
+
+      bottom:
+        12,
+
+      backgroundColor:
+        colors.white,
+
+      borderRadius:
+        radius.xl,
+
+      padding:
+        14,
+    },
+
+    checkpointCardHeader: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      paddingRight:
+        34,
+    },
+
+    checkpointCardIcon: {
+      width:
+        58,
+
+      height:
+        58,
+
+      borderRadius:
+        18,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    checkpointCardIconOpen: {
+      backgroundColor:
+        '#E8F5EE',
+    },
+
+    checkpointCardIconClosed: {
+      backgroundColor:
+        '#FCECEC',
+    },
+
+    cardGate: {
+      width:
+        31,
+
+      height:
+        34,
+
+      position:
+        'relative',
+    },
+
+    cardGateTop: {
+      position:
+        'absolute',
+
+      top:
+        1,
+
+      left:
+        1,
+
+      right:
+        1,
+
+      height:
+        8,
+
+      borderRadius:
+        3,
+
+      borderWidth:
+        2,
+
+      borderColor:
+        colors.primary,
+    },
+
+    cardGateLeft: {
+      position:
+        'absolute',
+
+      left:
+        4,
+
+      top:
+        7,
+
+      bottom:
+        1,
+
+      width:
+        6,
+
+      borderRadius:
+        3,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    cardGateRight: {
+      position:
+        'absolute',
+
+      right:
+        4,
+
+      top:
+        7,
+
+      bottom:
+        1,
+
+      width:
+        6,
+
+      borderRadius:
+        3,
+
+      backgroundColor:
+        colors.primary,
+    },
+
+    cardGateBar: {
+      position:
+        'absolute',
+
+      left:
+        8,
+
+      right:
+        8,
+
+      top:
+        15,
+
+      height:
         5,
+
+      borderRadius:
+        3,
+    },
+
+    cardGateBarOpen: {
+      backgroundColor:
+        colors.success,
+
+      transform:
+        [
+          {
+            rotate:
+              '-30deg',
+          },
+        ],
+    },
+
+    cardGateBarClosed: {
+      backgroundColor:
+        colors.error,
+    },
+
+    checkpointCardInfo: {
+      flex:
+        1,
+
+      marginRight:
+        10,
+
+      minWidth:
+        0,
+    },
+
+    checkpointCardArea: {
+      marginTop:
+        4,
+    },
+
+    checkpointStatusBox: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      marginTop:
+        12,
+
+      paddingTop:
+        11,
+
+      paddingBottom:
+        11,
+
+      borderTopWidth:
+        1,
+
+      borderBottomWidth:
+        1,
+
+      borderTopColor:
+        colors.border,
+
+      borderBottomColor:
+        colors.border,
+    },
+
+    checkpointStatusLeft: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+    },
+
+    checkpointStatusDot: {
+      width:
+        9,
+
+      height:
+        9,
+
+      borderRadius:
+        5,
+
+      marginLeft:
+        7,
+    },
+
+    checkpointStatusDotOpen: {
+      backgroundColor:
+        colors.success,
+    },
+
+    checkpointStatusDotClosed: {
+      backgroundColor:
+        colors.error,
+    },
+
+    checkpointLiveBadge: {
+      paddingHorizontal:
+        8,
+
+      paddingVertical:
+        4,
+
+      borderRadius:
+        radius.full,
+
+      backgroundColor:
+        colors.canvas,
+    },
+
+    checkpointDetails: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      gap:
+        9,
+
+      marginTop:
+        10,
+    },
+
+    checkpointDetail: {
+      flex:
+        1,
+
+      minHeight:
+        53,
+
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'center',
+
+      paddingHorizontal:
+        9,
+
+      borderRadius:
+        radius.lg,
+
+      backgroundColor:
+        '#FAFBF9',
+
+      borderWidth:
+        1,
+
+      borderColor:
+        colors.border,
+    },
+
+    checkpointDetailText: {
+      flex:
+        1,
+
+      marginRight:
+        7,
+
+      alignItems:
+        'flex-end',
+    },
+
+    checkpointDemoNotice: {
+      flexDirection:
+        'row-reverse',
+
+      alignItems:
+        'flex-start',
+
+      marginTop:
+        10,
+
+      padding:
+        9,
+
+      borderRadius:
+        radius.lg,
+
+      backgroundColor:
+        '#FFF8E8',
+
+      borderWidth:
+        1,
+
+      borderColor:
+        '#F4E3B5',
+    },
+
+    checkpointDemoDot: {
+      width:
+        7,
+
+      height:
+        7,
+
+      borderRadius:
+        4,
+
+      backgroundColor:
+        colors.rating,
+
+      marginTop:
+        5,
+    },
+
+    checkpointDemoText: {
+      flex:
+        1,
+
+      marginRight:
+        7,
+
+      lineHeight:
+        17,
+
+      textAlign:
+        'right',
     },
 
     /* ===============================================

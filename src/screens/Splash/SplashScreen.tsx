@@ -1,7 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-} from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import {
   Animated,
@@ -13,102 +10,79 @@ import {
 } from 'react-native';
 
 import Txt from '../../components/Txt';
+
 import {
   colors,
   radius,
 } from '../../styles/theme';
 
 export default function SplashScreen() {
-  const fadeAnim =
-    useRef(
-      new Animated.Value(0),
-    ).current;
+  const fadeAnim = useRef(
+    new Animated.Value(0),
+  ).current;
 
-  const logoScale =
-    useRef(
-      new Animated.Value(0.82),
-    ).current;
+  const logoScale = useRef(
+    new Animated.Value(0.88),
+  ).current;
 
-  const logoTranslate =
-    useRef(
-      new Animated.Value(12),
-    ).current;
+  const logoTranslate = useRef(
+    new Animated.Value(14),
+  ).current;
 
-  const textAnim =
-    useRef(
-      new Animated.Value(0),
-    ).current;
+  const textAnim = useRef(
+    new Animated.Value(0),
+  ).current;
 
-  const bottomAnim =
-    useRef(
-      new Animated.Value(0),
-    ).current;
+  const bottomAnim = useRef(
+    new Animated.Value(0),
+  ).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(
-        fadeAnim,
-        {
-          toValue: 1,
-          duration: 650,
-          easing:
-            Easing.out(
-              Easing.cubic,
-            ),
-          useNativeDriver: true,
-        },
-      ),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        easing: Easing.out(
+          Easing.cubic,
+        ),
+        useNativeDriver: true,
+      }),
 
-      Animated.spring(
-        logoScale,
-        {
-          toValue: 1,
-          friction: 7,
-          tension: 55,
-          useNativeDriver: true,
-        },
-      ),
+      Animated.spring(logoScale, {
+        toValue: 1,
+        friction: 7,
+        tension: 48,
+        useNativeDriver: true,
+      }),
 
-      Animated.timing(
-        logoTranslate,
-        {
-          toValue: 0,
-          duration: 700,
-          easing:
-            Easing.out(
-              Easing.cubic,
-            ),
-          useNativeDriver: true,
-        },
-      ),
+      Animated.timing(logoTranslate, {
+        toValue: 0,
+        duration: 750,
+        easing: Easing.out(
+          Easing.cubic,
+        ),
+        useNativeDriver: true,
+      }),
 
-      Animated.timing(
-        textAnim,
-        {
-          toValue: 1,
-          delay: 350,
-          duration: 650,
-          easing:
-            Easing.out(
-              Easing.cubic,
-            ),
-          useNativeDriver: true,
-        },
-      ),
+      Animated.timing(textAnim, {
+        toValue: 1,
+        delay: 300,
+        duration: 650,
+        easing: Easing.out(
+          Easing.cubic,
+        ),
+        useNativeDriver: true,
+      }),
 
-      Animated.timing(
-        bottomAnim,
-        {
-          toValue: 1,
-          delay: 650,
-          duration: 550,
-          easing:
-            Easing.out(
-              Easing.cubic,
-            ),
-          useNativeDriver: true,
-        },
-      ),
+      Animated.timing(bottomAnim, {
+        toValue: 1,
+        delay: 700,
+        duration: 500,
+        easing: Easing.out(
+          Easing.cubic,
+        ),
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [
     fadeAnim,
@@ -118,27 +92,39 @@ export default function SplashScreen() {
     bottomAnim,
   ]);
 
+  const textTranslateY =
+    textAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [12, 0],
+    });
+
+  const bottomTranslateY =
+    bottomAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [10, 0],
+    });
+
   return (
     <View style={styles.container}>
       <StatusBar
         barStyle="light-content"
-        backgroundColor={
-          colors.primary
-        }
+        backgroundColor={colors.primary}
       />
 
-      {/* Decorative background */}
+      {/* Background atmosphere */}
       <View
+        pointerEvents="none"
         style={[
-          styles.circleLarge,
-          styles.circleTop,
+          styles.backgroundOrb,
+          styles.backgroundOrbTop,
         ]}
       />
 
       <View
+        pointerEvents="none"
         style={[
-          styles.circleMedium,
-          styles.circleBottom,
+          styles.backgroundOrb,
+          styles.backgroundOrbBottom,
         ]}
       />
 
@@ -146,8 +132,7 @@ export default function SplashScreen() {
         style={[
           styles.content,
           {
-            opacity:
-              fadeAnim,
+            opacity: fadeAnim,
             transform: [
               {
                 translateY:
@@ -164,29 +149,20 @@ export default function SplashScreen() {
             {
               transform: [
                 {
-                  scale:
-                    logoScale,
+                  scale: logoScale,
                 },
               ],
             },
           ]}
         >
-          <View
-            style={
-              styles.logoGlow
-            }
-          />
+          <View style={styles.logoGlow} />
 
           <View
-            style={
-              styles.logoContainer
-            }
+            style={styles.logoContainer}
           >
             <Image
               source={require('../../../assets/images/icon.png')}
-              style={
-                styles.logo
-              }
+              style={styles.logo}
               resizeMode="contain"
             />
           </View>
@@ -197,25 +173,11 @@ export default function SplashScreen() {
           style={[
             styles.brandSection,
             {
-              opacity:
-                textAnim,
+              opacity: textAnim,
               transform: [
                 {
                   translateY:
-                    textAnim.interpolate(
-                      {
-                        inputRange:
-                          [
-                            0,
-                            1,
-                          ],
-                        outputRange:
-                          [
-                            10,
-                            0,
-                          ],
-                      },
-                    ),
+                    textTranslateY,
                 },
               ],
             },
@@ -223,13 +185,9 @@ export default function SplashScreen() {
         >
           <Txt
             variant="h1"
-            color={
-              colors.white
-            }
+            color={colors.white}
             align="center"
-            style={
-              styles.brand
-            }
+            style={styles.brand}
           >
             مهنتي
           </Txt>
@@ -238,54 +196,29 @@ export default function SplashScreen() {
             variant="body"
             color="#D8EBE1"
             align="center"
-            style={
-              styles.tagline
-            }
+            style={styles.tagline}
           >
             خدمات محلية، بثقة وذكاء
           </Txt>
         </Animated.View>
 
-        {/* Small feature line */}
+        {/* Journey */}
         <Animated.View
           style={[
-            styles.featureLine,
+            styles.journey,
             {
-              opacity:
-                bottomAnim,
-
+              opacity: bottomAnim,
               transform: [
                 {
                   translateY:
-                    bottomAnim.interpolate(
-                      {
-                        inputRange:
-                          [
-                            0,
-                            1,
-                          ],
-                        outputRange:
-                          [
-                            12,
-                            0,
-                          ],
-                      },
-                    ),
+                    bottomTranslateY,
                 },
               ],
             },
           ]}
         >
-          <View
-            style={
-              styles.feature
-            }
-          >
-            <View
-              style={
-                styles.featureDot
-              }
-            />
+          <View style={styles.journeyItem}>
+            <View style={styles.journeyDot} />
 
             <Txt
               variant="labelSm"
@@ -296,21 +229,11 @@ export default function SplashScreen() {
           </View>
 
           <View
-            style={
-              styles.featureDivider
-            }
+            style={styles.journeyDivider}
           />
 
-          <View
-            style={
-              styles.feature
-            }
-          >
-            <View
-              style={
-                styles.featureDot
-              }
-            />
+          <View style={styles.journeyItem}>
+            <View style={styles.journeyDot} />
 
             <Txt
               variant="labelSm"
@@ -321,21 +244,11 @@ export default function SplashScreen() {
           </View>
 
           <View
-            style={
-              styles.featureDivider
-            }
+            style={styles.journeyDivider}
           />
 
-          <View
-            style={
-              styles.feature
-            }
-          >
-            <View
-              style={
-                styles.featureDot
-              }
-            />
+          <View style={styles.journeyItem}>
+            <View style={styles.journeyDot} />
 
             <Txt
               variant="labelSm"
@@ -347,13 +260,18 @@ export default function SplashScreen() {
         </Animated.View>
       </Animated.View>
 
-      {/* Bottom brand statement */}
+      {/* Bottom statement */}
       <Animated.View
         style={[
           styles.bottomText,
           {
-            opacity:
-              bottomAnim,
+            opacity: bottomAnim,
+            transform: [
+              {
+                translateY:
+                  bottomTranslateY,
+              },
+            ],
           },
         ]}
       >
@@ -369,218 +287,138 @@ export default function SplashScreen() {
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor:
-        colors.primary,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      overflow:
-        'hidden',
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
 
-    /* =============================
-       BACKGROUND
-    ============================== */
+  /* Background */
 
-    circleLarge: {
-      position:
-        'absolute',
-      borderRadius:
-        999,
-      backgroundColor:
-        'rgba(255,255,255,0.035)',
-    },
+  backgroundOrb: {
+    position: 'absolute',
+    borderRadius: 999,
+  },
 
-    circleTop: {
-      width:
-        340,
-      height:
-        340,
-      top:
-        -160,
-      right:
-        -120,
-    },
+  backgroundOrbTop: {
+    width: 360,
+    height: 360,
+    top: -190,
+    right: -150,
+    backgroundColor:
+      'rgba(255,255,255,0.035)',
+  },
 
-    circleMedium: {
-      position:
-        'absolute',
-      borderRadius:
-        999,
-      backgroundColor:
-        'rgba(64,145,108,0.20)',
-    },
+  backgroundOrbBottom: {
+    width: 310,
+    height: 310,
+    bottom: -180,
+    left: -150,
+    backgroundColor:
+      'rgba(64,145,108,0.18)',
+  },
 
-    circleBottom: {
-      width:
-        290,
-      height:
-        290,
-      bottom:
-        -145,
-      left:
-        -120,
-    },
+  /* Main content */
 
-    /* =============================
-       CONTENT
-    ============================== */
+  content: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
 
-    content: {
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      width:
-        '100%',
-      paddingHorizontal:
-        24,
-    },
+  /* Logo */
 
-    /* =============================
-       LOGO
-    ============================== */
+  logoOuter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-    logoOuter: {
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-    },
+  logoGlow: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor:
+      'rgba(64,145,108,0.20)',
+  },
 
-    logoGlow: {
-      position:
-        'absolute',
-      width:
-        142,
-      height:
-        142,
-      borderRadius:
-        71,
-      backgroundColor:
-        'rgba(64,145,108,0.22)',
-    },
+  logoContainer: {
+    width: 118,
+    height: 118,
+    borderRadius: 34,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+  },
 
-    logoContainer: {
-      width:
-        118,
-      height:
-        118,
-      borderRadius:
-        34,
-      backgroundColor:
-        colors.white,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      padding:
-        13,
-    },
+  logo: {
+    width: 98,
+    height: 98,
+  },
 
-    logo: {
-      width:
-        130,
-      height:
-        140,
-    },
+  /* Brand */
 
-    /* =============================
-       BRAND
-    ============================== */
+  brandSection: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
 
-    brandSection: {
-      marginTop:
-        24,
-      alignItems:
-        'center',
-    },
+  brand: {
+    fontSize: 40,
+    lineHeight: 52,
+    letterSpacing: 0.2,
+  },
 
-    brand: {
-      fontSize:
-        40,
-      lineHeight:
-        52,
-      letterSpacing:
-        0.2,
-    },
+  tagline: {
+    marginTop: 5,
+    fontSize: 15,
+  },
 
-    tagline: {
-      marginTop:
-        5,
-      fontSize:
-        15,
-    },
+  /* Journey */
 
-    /* =============================
-       FEATURES
-    ============================== */
+  journey: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    marginTop: 30,
+    backgroundColor:
+      'rgba(255,255,255,0.08)',
+    borderRadius: radius.full,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+  },
 
-    featureLine: {
-      flexDirection:
-        'row-reverse',
-      alignItems:
-        'center',
-      marginTop:
-        30,
-      backgroundColor:
-        'rgba(255,255,255,0.08)',
-      borderRadius:
-        radius.full,
-      paddingHorizontal:
-        15,
-      paddingVertical:
-        8,
-    },
+  journeyItem: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+  },
 
-    feature: {
-      flexDirection:
-        'row-reverse',
-      alignItems:
-        'center',
-    },
+  journeyDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.mint,
+    marginLeft: 5,
+  },
 
-    featureDot: {
-      width:
-        5,
-      height:
-        5,
-      borderRadius:
-        3,
-      backgroundColor:
-        colors.mint,
-      marginLeft:
-        5,
-    },
+  journeyDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor:
+      'rgba(255,255,255,0.22)',
+    marginHorizontal: 12,
+  },
 
-    featureDivider: {
-      width:
-        1,
-      height:
-        14,
-      backgroundColor:
-        'rgba(255,255,255,0.22)',
-      marginHorizontal:
-        12,
-    },
+  /* Bottom */
 
-    /* =============================
-       BOTTOM
-    ============================== */
-
-    bottomText: {
-      position:
-        'absolute',
-      bottom:
-        28,
-      left:
-        24,
-      right:
-        24,
-    },
-  });
+  bottomText: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: 28,
+  },
+});
