@@ -22,6 +22,7 @@ export const colors = {
   error: '#D64545',
   errorSoft: '#FEE2E2',
   white: '#FFFFFF',
+  rating: '#F4B942',
 };
 
 export const radius = {
@@ -40,13 +41,14 @@ export const spacing = {
   xl: 32,
 };
 
-export type FontWeight = '400' | '500' | '600' | '700';
+export type FontWeight = '400' | '500' | '600' | '700' | '800';
 
 export const fontFamilies: Record<FontWeight, string> = {
   '400': 'Cairo_400Regular',
   '500': 'Cairo_500Medium',
   '600': 'Cairo_600SemiBold',
   '700': 'Cairo_700Bold',
+  '800': 'Cairo_700Bold',
 };
 
 export const shadows = StyleSheet.create({

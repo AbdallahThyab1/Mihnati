@@ -33,8 +33,10 @@ import Txt from '../../components/Txt';
 
 import {
   categories,
-  craftsmen,
+  craftsmen as fallbackCraftsmen,
 } from '../../data/mock';
+import { getCraftsmen } from '../../services/craftsmenService';
+import type { Craftsman } from '../../types/database';
 
 import {
   colors,
@@ -501,8 +503,7 @@ const detectAiIntent = (
 ========================================================= */
 
 const scoreCraftsman = (
-  craftsman:
-    (typeof craftsmen)[number],
+  craftsman: Craftsman,
   terms: string[],
 ): number => {
   const fields = {
@@ -590,8 +591,9 @@ const searchCraftsmen = (
   isAi: boolean,
   explicitCategory: string,
   explicitKeywords: string,
+  sourceCraftsmen: Craftsman[] = fallbackCraftsmen,
 ): {
-  results: typeof craftsmen;
+  results: Craftsman[];
   aiIntent:
     | AiIntent
     | null;
@@ -606,7 +608,7 @@ const searchCraftsmen = (
   ) {
     return {
       results: [
-        ...craftsmen,
+        ...sourceCraftsmen,
       ],
       aiIntent: null,
     };
@@ -631,14 +633,14 @@ const searchCraftsmen = (
 
   let candidates =
     categoryFilter
-      ? craftsmen.filter(
+      ? sourceCraftsmen.filter(
           (craftsman) =>
             craftsman.categoryIds.includes(
               categoryFilter,
             ),
         )
       : [
-          ...craftsmen,
+          ...sourceCraftsmen,
         ];
 
   const externalKeywords =
@@ -768,6 +770,13 @@ export default function ResultsScreen() {
   const explicitService =
     getParam(params.service);
 
+  const [craftsmenList, setCraftsmenList] =
+    useState<Craftsman[]>(fallbackCraftsmen);
+
+  useEffect(() => {
+    getCraftsmen().then(setCraftsmenList);
+  }, []);
+
   const [query, setQuery] =
     useState<string>(
       paramQuery,
@@ -809,12 +818,14 @@ export default function ResultsScreen() {
           isAi,
           explicitCategory,
           explicitKeywords,
+          craftsmenList,
         ),
       [
         query,
         isAi,
         explicitCategory,
         explicitKeywords,
+        craftsmenList,
       ],
     );
 

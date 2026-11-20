@@ -170,7 +170,7 @@ function ReminderCard({
         onPress={onOpen}
         style={({ pressed }) => [
           styles.reminderMain,
-          pressed && styles.pressed,
+          pressed && { opacity: 0.85 },
         ]}
         accessibilityRole="button"
         accessibilityLabel={`فتح ${reminder.title}`}

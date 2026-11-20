@@ -1,6 +1,7 @@
 import type { ServiceCategory } from './mock';
 
 export type BookingStatus =
+  | 'pending'
   | 'confirmed'
   | 'completed'
   | 'cancelled';
@@ -10,10 +11,15 @@ export interface ServiceBooking {
   craftsmanId: string;
   categoryId: ServiceCategory['id'];
   serviceTitle: string;
+  service?: string;
   date: string;
   time: string;
   status: BookingStatus;
   notes?: string;
+  location?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
   createdAt: string;
 }
 

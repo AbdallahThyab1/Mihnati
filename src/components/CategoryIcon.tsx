@@ -3,7 +3,7 @@ import { Briefcase, Car, Fan, Hammer, Paintbrush, Smartphone, SprayCan, Truck, W
 import { ServiceCategory } from '../data/mock';
 
 interface CategoryIconProps {
-  icon: ServiceCategory['icon'];
+  icon: ServiceCategory['icon'] | string;
   size?: number;
   color: string;
 }

@@ -122,7 +122,9 @@ export const getReminder = (id: string) =>
 
 export const subscribeMyServices = (listener: () => void) => {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 };
 
 export const addMyService = (input: {

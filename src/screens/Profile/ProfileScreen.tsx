@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -25,8 +25,17 @@ import {
   UserRound,
 } from 'lucide-react-native';
 
-import { categories, getCraftsman } from '../../data/mock';
-import { colors, radius } from '../../styles/theme';
+import { categories, getCraftsman as getFallbackCraftsman } from '../../data/mock';
+import {
+  getCraftsmanById,
+  getCraftsmanServices,
+  isCraftsmanSaved,
+  toggleSaveCraftsman,
+} from '../../services/craftsmenService';
+import { useAuth } from '../../context/AuthContext';
+import AuthModal from '../../components/AuthModal';
+import type { Craftsman, PriceService } from '../../types/database';
+import { card, colors, radius, row } from '../../styles/theme';
 
 const formatPhoneForWhatsApp = (
   phone: string,
@@ -56,18 +65,74 @@ export default function ProfileScreen() {
       id?: string | string[];
     }>();
 
+  const { user } = useAuth();
+  const [authVisible, setAuthVisible] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    'about' | 'location'
-  >('about');
+  const [activeTab, setActiveTab] = useState<'about' | 'location'>('about');
 
-  const craftsmanId = Array.isArray(id)
-    ? id[0]
-    : id;
+  const craftsmanId = Array.isArray(id) ? id[0] : id;
 
-  const craftsman = getCraftsman(
-    craftsmanId || 'c1',
+  const [craftsman, setCraftsman] = useState<Craftsman>(() =>
+    getFallbackCraftsman(craftsmanId || 'c1'),
   );
+  const [priceServices, setPriceServices] = useState<PriceService[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [cData, sData] = await Promise.all([
+          getCraftsmanById(craftsmanId || 'c1'),
+          getCraftsmanServices(craftsmanId || 'c1'),
+        ]);
+        if (mounted) {
+          setCraftsman(cData);
+          setPriceServices(sData);
+        }
+      } catch (err) {
+        console.warn('Error loading craftsman from Supabase:', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, [craftsmanId]);
+
+  useEffect(() => {
+    if (!user || !craftsman?.id) {
+      setSaved(false);
+      return;
+    }
+    isCraftsmanSaved(user.id, craftsman.id).then(setSaved);
+  }, [user, craftsman?.id]);
+
+  const handleToggleSave = async () => {
+    if (!user) {
+      Alert.alert(
+        'تسجيل الدخول مطلوب',
+        'يرجى تسجيل الدخول لتتمكن من حفظ الحرفي في قائمتك المفضلة للوصول السريع.',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          { text: 'تسجيل دخول', onPress: () => setAuthVisible(true) },
+        ],
+      );
+      return;
+    }
+    const nextSaved = await toggleSaveCraftsman(user.id, craftsman.id);
+    setSaved(nextSaved);
+    Alert.alert(
+      nextSaved ? 'تم الحفظ بنجاح 🎉' : 'تمت الإزالة',
+      nextSaved
+        ? `تمت إضافة "${craftsman.name}" إلى قائمة الحرفيين المحفوظين.`
+        : `تمت إزالة "${craftsman.name}" من قائمة الحرفيين المحفوظين.`,
+    );
+  };
 
   const categoryItems = useMemo(
     () =>
@@ -158,6 +223,7 @@ export default function ProfileScreen() {
 
   const openBooking = (
     categoryId?: string,
+    serviceTitle?: string,
   ) => {
     router.push({
       pathname:
@@ -169,6 +235,7 @@ export default function ProfileScreen() {
           categoryId ??
           craftsman.categoryIds[0] ??
           '',
+        serviceTitle: serviceTitle ?? '',
       },
     });
   };
@@ -238,12 +305,7 @@ export default function ProfileScreen() {
               </Pressable>
 
               <Pressable
-                onPress={() =>
-                  setSaved(
-                    (value) =>
-                      !value,
-                  )
-                }
+                onPress={handleToggleSave}
                 style={({ pressed }) => [
                   styles.roundButton,
                   pressed &&
@@ -846,6 +908,115 @@ export default function ProfileScreen() {
                 )}
               </View>
 
+              {priceServices.length > 0 ? (
+                <>
+                  <SectionTitle
+                    title="الخدمات والأسعار المعتمدة"
+                    subtitle="خدمات محددة التكلفة والمدة مع الضمان"
+                  />
+                  <View style={{ gap: 10, marginTop: 4, marginBottom: 12 }}>
+                    {priceServices.map((svc) => (
+                      <View
+                        key={svc.id}
+                        style={[card, { padding: 14, backgroundColor: colors.surface }]}
+                      >
+                        <View style={[row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+                          <View style={{ flex: 1, paddingLeft: 10 }}>
+                            <Text
+                              style={{
+                                fontFamily: 'Cairo_700Bold',
+                                fontSize: 15,
+                                color: colors.text,
+                                textAlign: 'right',
+                              }}
+                            >
+                              {svc.title}
+                            </Text>
+                            {svc.description ? (
+                              <Text
+                                style={{
+                                  fontFamily: 'Cairo_400Regular',
+                                  fontSize: 13,
+                                  color: colors.muted,
+                                  textAlign: 'right',
+                                  marginTop: 3,
+                                }}
+                              >
+                                {svc.description}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <View style={{ alignItems: 'flex-start' }}>
+                            <Text
+                              style={{
+                                fontFamily: 'Cairo_700Bold',
+                                fontSize: 15,
+                                color: colors.primary,
+                              }}
+                            >
+                              {svc.priceRange}
+                            </Text>
+                            {svc.duration ? (
+                              <Text
+                                style={{
+                                  fontFamily: 'Cairo_500Medium',
+                                  fontSize: 11,
+                                  color: colors.muted,
+                                  marginTop: 2,
+                                }}
+                              >
+                                ⏱ {svc.duration}
+                              </Text>
+                            ) : null}
+                          </View>
+                        </View>
+                        <View
+                          style={[
+                            row,
+                            {
+                              justifyContent: 'space-between',
+                              marginTop: 10,
+                              paddingTop: 8,
+                              borderTopWidth: 1,
+                              borderTopColor: colors.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: 'Cairo_400Regular',
+                              fontSize: 11,
+                              color: colors.muted,
+                            }}
+                          >
+                            {svc.priceNote || 'كشفية استرشادية'}
+                          </Text>
+                          <Pressable
+                            style={{
+                              backgroundColor: colors.tint,
+                              paddingHorizontal: 12,
+                              paddingVertical: 5,
+                              borderRadius: radius.md,
+                            }}
+                            onPress={() => openBooking(craftsman.categoryIds[0], svc.title)}
+                          >
+                            <Text
+                              style={{
+                                fontFamily: 'Cairo_600SemiBold',
+                                fontSize: 12,
+                                color: colors.primary,
+                              }}
+                            >
+                              حجز هذه الخدمة
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              ) : null}
+
               <View
                 style={
                   styles.infoGrid
@@ -1205,6 +1376,16 @@ export default function ProfileScreen() {
           />
         </Pressable>
       </View>
+
+      <AuthModal
+        visible={authVisible}
+        onClose={() => setAuthVisible(false)}
+        onSuccess={() => {
+          if (user && craftsman?.id) {
+            isCraftsmanSaved(user.id, craftsman.id).then(setSaved);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -1326,7 +1507,7 @@ const styles =
     },
 
     coverOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...(StyleSheet.absoluteFill as any),
       backgroundColor:
         'rgba(0,0,0,0.16)',
     },

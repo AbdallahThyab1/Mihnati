@@ -1,16 +1,3 @@
-if (
-  typeof document !== 'undefined' &&
-  !document.getElementById('genvibe-inspector')
-) {
-  const __gvInspector = document.createElement('script');
-
-  __gvInspector.id = 'genvibe-inspector';
-  __gvInspector.src =
-    'https://genvibe.pro/inspector-script.js?v=e2b-route2';
-
-  document.head.appendChild(__gvInspector);
-}
-
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -26,16 +13,14 @@ import {
   Cairo_700Bold,
 } from '@expo-google-fonts/cairo';
 
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { colors } from '../src/styles/theme';
 import SplashScreen from '../src/screens/Splash/SplashScreen';
+import { AuthProvider } from '../src/context/AuthContext';
 
-// Keep the native Expo splash visible until the app is ready
+// Keep native Expo splash visible until fonts are ready
 void NativeSplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useFrameworkReady();
-
   const [fontsLoaded, fontError] = useFonts({
     Cairo_400Regular,
     Cairo_500Medium,
@@ -45,14 +30,14 @@ export default function RootLayout() {
 
   const [showCustomSplash, setShowCustomSplash] = useState(true);
 
-  // Hide Expo native splash after fonts are ready
+  // Hide Expo native splash once fonts are ready
   useEffect(() => {
     if (fontsLoaded || fontError) {
       void NativeSplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
-  // Show our custom Mihnati splash for 3 seconds
+  // Show Mihnati animated splash for 1.8s
   useEffect(() => {
     if (!fontsLoaded && !fontError) {
       return;
@@ -60,12 +45,11 @@ export default function RootLayout() {
 
     const timer = setTimeout(() => {
       setShowCustomSplash(false);
-    }, 5000);
+    }, 1800);
 
     return () => clearTimeout(timer);
   }, [fontsLoaded, fontError]);
 
-  // While fonts are loading
   if (!fontsLoaded && !fontError) {
     return (
       <View style={styles.loadingScreen}>
@@ -74,8 +58,6 @@ export default function RootLayout() {
     );
   }
 
-  // IMPORTANT:
-  // Don't render the app stack during the custom splash.
   if (showCustomSplash) {
     return (
       <View style={styles.splashScreen}>
@@ -85,27 +67,35 @@ export default function RootLayout() {
     );
   }
 
-  // Main application
   return (
     <SafeAreaProvider>
-      <View style={styles.root}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: colors.canvas,
-            },
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="profile/[id]" />
-          <Stack.Screen name="reviews/[id]" />
-          <Stack.Screen name="join" />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+      <AuthProvider>
+        <View style={styles.root}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: colors.canvas,
+              },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="profile/[id]" />
+            <Stack.Screen name="booking/[craftsmanId]" />
+            <Stack.Screen name="bookings" />
+            <Stack.Screen name="bookings/[id]" />
+            <Stack.Screen name="reviews" />
+            <Stack.Screen name="reviews/[id]" />
+            <Stack.Screen name="services" />
+            <Stack.Screen name="services/explore" />
+            <Stack.Screen name="services/[id]" />
+            <Stack.Screen name="join" />
+            <Stack.Screen name="+not-found" />
+          </Stack>
 
-        <StatusBar style="dark" />
-      </View>
+          <StatusBar style="dark" />
+        </View>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
@@ -115,12 +105,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.primary,
   },
-
   splashScreen: {
     flex: 1,
     backgroundColor: colors.primary,
   },
-
   root: {
     flex: 1,
   },

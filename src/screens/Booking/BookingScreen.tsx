@@ -1,8 +1,10 @@
 import React, {
+    useEffect,
     useMemo,
     useState,
 } from 'react';
 import {
+    Alert,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -33,16 +35,13 @@ import ScreenHeader from '../../components/ScreenHeader';
 import Txt from '../../components/Txt';
 import {
     categories,
-    getCraftsman,
+    getCraftsman as getFallbackCraftsman,
 } from '../../data/mock';
-import {
-    addBooking,
-    type ServiceBooking,
-} from '../../data/bookings';
-import {
-    addMyService,
-    addServiceReminder,
-} from '../../data/myServices';
+import { createBooking } from '../../services/bookingsService';
+import { createMyService, createServiceReminder } from '../../services/myServicesService';
+import { getCraftsmanById } from '../../services/craftsmenService';
+import { useAuth } from '../../context/AuthContext';
+import type { Craftsman, ServiceBooking } from '../../types/database';
 import {
     colors,
     radius,
@@ -456,7 +455,7 @@ function BookingSuccess({
                     color={colors.white}
                     weight="800"
                 >
-                    الانتقال إلى خدماتي
+                    الانتقال إلى سجل الحجوزات
                 </Txt>
 
                 <ArrowLeft
@@ -496,15 +495,33 @@ export default function BookingScreen() {
             categoryId?:
             | string
             | string[];
+            serviceTitle?:
+            | string
+            | string[];
         }>();
+
+    const { user, profile } = useAuth();
 
     const craftsmanId = getParam(
         params.craftsmanId,
     );
+    const requestedServiceTitle = getParam(params.serviceTitle);
 
-    const craftsman = getCraftsman(
-        craftsmanId || 'c1',
+    const [craftsman, setCraftsman] = useState<Craftsman>(() =>
+        getFallbackCraftsman(craftsmanId || 'c1'),
     );
+
+    useEffect(() => {
+        let mounted = true;
+        getCraftsmanById(craftsmanId || 'c1').then((c) => {
+            if (mounted && c) {
+                setCraftsman(c);
+            }
+        });
+        return () => {
+            mounted = false;
+        };
+    }, [craftsmanId]);
 
     const dates = useMemo(
         getNextDates,
@@ -560,6 +577,18 @@ export default function BookingScreen() {
     const [notes, setNotes] =
         useState('');
 
+    const [customerName, setCustomerName] = useState(profile?.full_name || '');
+    const [customerPhone, setCustomerPhone] = useState(profile?.phone || '');
+    const [customerAddress, setCustomerAddress] = useState(profile?.city || 'رام الله والبيرة');
+
+    useEffect(() => {
+        if (profile) {
+            if (!customerName && profile.full_name) setCustomerName(profile.full_name);
+            if (!customerPhone && profile.phone) setCustomerPhone(profile.phone);
+            if (!customerAddress && profile.city) setCustomerAddress(profile.city);
+        }
+    }, [profile]);
+
     const [submitting, setSubmitting] =
         useState(false);
 
@@ -577,7 +606,7 @@ export default function BookingScreen() {
         )?.label ?? 'الخدمة';
 
     const serviceTitle =
-        getServiceTitle(categoryId);
+        requestedServiceTitle || getServiceTitle(categoryId);
 
     const dateParts =
         dates.map((item) => ({
@@ -588,59 +617,68 @@ export default function BookingScreen() {
     const selectedDateLabel =
         formatLongDate(date);
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (submitting) {
             return;
         }
 
+        if (!customerName.trim() || !customerPhone.trim()) {
+            Alert.alert(
+                'بيانات التواصل مطلوبة',
+                'يرجى كتابة الاسم ورقم الهاتف للتنسيق الميداني وتأكيد الحجز.',
+            );
+            return;
+        }
+
         setSubmitting(true);
+        const trimmedNotes = notes.trim() || undefined;
 
-        const trimmedNotes =
-            notes.trim() || undefined;
-
-        const booking =
-            addBooking({
-                craftsmanId:
-                    craftsman.id,
+        try {
+            const booking = await createBooking({
+                customerId: user?.id || null,
+                craftsmanId: craftsman.id,
                 categoryId,
                 serviceTitle,
                 date,
                 time,
                 notes: trimmedNotes,
+                customerName: customerName.trim(),
+                customerPhone: customerPhone.trim(),
+                customerAddress: customerAddress.trim() || 'رام الله والبيرة',
             });
 
-        const service =
-            addMyService({
-                title: serviceTitle,
-                categoryId,
-                craftsmanId:
-                    craftsman.id,
-                lastServiceDate:
-                    new Date()
-                        .toISOString()
-                        .slice(0, 10),
-                sourceBookingId:
-                    booking.id,
-                nextBookingDate:
-                    booking.date,
-                nextBookingTime:
-                    booking.time,
-                notes: trimmedNotes,
-            });
+            if (user) {
+                try {
+                    const service = await createMyService({
+                        userId: user.id,
+                        title: serviceTitle,
+                        categoryId,
+                        craftsmanId: craftsman.id,
+                        sourceBookingId: booking.id,
+                        nextBookingDate: booking.date,
+                        nextBookingTime: booking.time,
+                        notes: trimmedNotes,
+                    });
 
-        addServiceReminder({
-            serviceId: service.id,
-            title: `موعد ${serviceTitle}`,
-            date: booking.date,
-            type: 'booking',
-            notes: `موعد محجوز مع ${craftsman.name}.`,
-        });
+                    await createServiceReminder({
+                        serviceId: service.id,
+                        userId: user.id,
+                        title: `موعد صيانة: ${serviceTitle}`,
+                        date: booking.date,
+                        type: 'booking',
+                        notes: `موعد محجوز مع الفني ${craftsman.name}.`,
+                    });
+                } catch (subErr) {
+                    console.warn('MyService auto-link notice:', subErr);
+                }
+            }
 
-        setConfirmedBooking(
-            booking,
-        );
-
-        setSubmitting(false);
+            setConfirmedBooking(booking);
+        } catch (err: any) {
+            Alert.alert('خطأ في إرسال الحجز', err.message || 'تعذر تأكيد الحجز، يرجى المحاولة ثانية.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (confirmedBooking) {
@@ -665,7 +703,7 @@ export default function BookingScreen() {
                         }
                         onViewServices={() =>
                             router.replace(
-                                '/services',
+                                '/bookings',
                             )
                         }
                         onBackToProfile={() =>
@@ -1182,6 +1220,65 @@ export default function BookingScreen() {
                         </Txt>
                     </View>
 
+                    <View style={styles.sectionCard}>
+                        <StepHeader
+                            number="5"
+                            title="بيانات الزيارة والتواصل"
+                            subtitle="لتأكيد الموعد والتنسيق الميداني معك"
+                            icon={
+                                <UserRound
+                                    size={17}
+                                    color={colors.primary}
+                                />
+                            }
+                        />
+
+                        <View style={{ gap: 12, marginTop: 4 }}>
+                            <View>
+                                <Txt variant="small" weight="600" color={colors.text} style={{ marginBottom: 4 }}>
+                                    الاسم الكامل *
+                                </Txt>
+                                <TextInput
+                                    value={customerName}
+                                    onChangeText={setCustomerName}
+                                    placeholder="أحمد البرغوثي"
+                                    placeholderTextColor={colors.muted}
+                                    textAlign="right"
+                                    style={styles.singleLineInput}
+                                />
+                            </View>
+
+                            <View>
+                                <Txt variant="small" weight="600" color={colors.text} style={{ marginBottom: 4 }}>
+                                    رقم الهاتف للتواصل *
+                                </Txt>
+                                <TextInput
+                                    value={customerPhone}
+                                    onChangeText={setCustomerPhone}
+                                    placeholder="0599xxxxxx"
+                                    placeholderTextColor={colors.muted}
+                                    keyboardType="phone-pad"
+                                    textAlign="right"
+                                    style={styles.singleLineInput}
+                                />
+                            </View>
+
+                            <View>
+                                <Txt variant="small" weight="600" color={colors.text} style={{ marginBottom: 4 }}>
+                                    العنوان والمنطقة
+                                </Txt>
+                                <TextInput
+                                    value={customerAddress}
+                                    onChangeText={setCustomerAddress}
+                                    placeholder="مثال: رام الله - الطيرة - قرب مدرسة..."
+                                    placeholderTextColor={colors.muted}
+                                    textAlign="right"
+                                    style={styles.singleLineInput}
+                                />
+                            </View>
+                        </View>
+                    </View>
+
                     <View style={styles.infoBox}>
                         <ShieldCheck
                             size={20}
@@ -1673,6 +1770,18 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontSize: 13,
         lineHeight: 21,
+    },
+
+    singleLineInput: {
+        height: 48,
+        backgroundColor: colors.canvas,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        paddingHorizontal: 12,
+        fontFamily: 'Cairo_500Medium',
+        fontSize: 14,
+        color: colors.text,
     },
 
     characterCount: {

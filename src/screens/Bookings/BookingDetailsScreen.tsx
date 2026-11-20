@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Linking,
@@ -22,16 +23,17 @@ import {
   MapPin,
   Phone,
   Search,
+  XCircle,
 } from 'lucide-react-native';
 
 import ScreenHeader from '../../components/ScreenHeader';
 import Txt from '../../components/Txt';
 
-import { getCraftsman } from '../../data/mock';
-import {
-  getBooking,
-  type BookingStatus,
-} from '../../data/bookings';
+import { getCraftsman as getFallbackCraftsman } from '../../data/mock';
+import { getBooking as getFallbackBooking } from '../../data/bookings';
+import { getBookingById, cancelBooking as cancelDbBooking } from '../../services/bookingsService';
+import { getCraftsmanById } from '../../services/craftsmenService';
+import type { BookingStatus, Craftsman, ServiceBooking } from '../../types/database';
 
 import {
   card,
@@ -140,9 +142,52 @@ export default function BookingDetailsScreen() {
       ? params.id[0]
       : params.id;
 
-  const booking = bookingId
-    ? getBooking(bookingId)
-    : undefined;
+  const [booking, setBooking] = useState<ServiceBooking | undefined>(() =>
+    bookingId ? getFallbackBooking(bookingId) : undefined,
+  );
+  const [craftsman, setCraftsman] = useState<Craftsman>(() =>
+    booking ? getFallbackCraftsman(booking.craftsmanId) : getFallbackCraftsman('c1'),
+  );
+  const [loading, setLoading] = useState(!booking);
+
+  useEffect(() => {
+    if (!bookingId) {
+      setLoading(false);
+      return;
+    }
+    let mounted = true;
+    getBookingById(bookingId).then((res) => {
+      if (!mounted) return;
+      if (res) {
+        setBooking(res);
+        if (res.craftsman) {
+          setCraftsman(res.craftsman);
+        } else {
+          getCraftsmanById(res.craftsmanId).then((c) => {
+            if (mounted && c) setCraftsman(c);
+          });
+        }
+      }
+      setLoading(false);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [bookingId]);
+
+  if (loading) {
+    return (
+      <View style={styles.screen}>
+        <ScreenHeader title="تفاصيل الحجز" />
+        <View style={[styles.notFound, { justifyContent: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Txt variant="body" color={colors.muted} style={{ marginTop: 12 }}>
+            جارٍ تحميل بيانات الحجز...
+          </Txt>
+        </View>
+      </View>
+    );
+  }
 
   if (!booking) {
     return (
@@ -217,15 +262,10 @@ export default function BookingDetailsScreen() {
     );
   }
 
-  const craftsman =
-    getCraftsman(
-      booking.craftsmanId,
-    );
-
   const statusStyle =
     statusStyles[
       booking.status
-    ];
+    ] || statusStyles.confirmed;
 
   const contact = async () => {
     try {
@@ -238,6 +278,26 @@ export default function BookingDetailsScreen() {
         'تأكد من وجود تطبيق اتصال على الجهاز.',
       );
     }
+  };
+
+  const handleCancel = () => {
+    if (!booking) return;
+    Alert.alert(
+      'إلغاء الموعد',
+      'هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟',
+      [
+        { text: 'تراجع', style: 'cancel' },
+        {
+          text: 'تأكيد الإلغاء',
+          style: 'destructive',
+          onPress: async () => {
+            await cancelDbBooking(booking.id);
+            setBooking((prev) => (prev ? { ...prev, status: 'cancelled' } : prev));
+            Alert.alert('تم الإلغاء', 'تم إلغاء الحجز بنجاح.');
+          },
+        },
+      ],
+    );
   };
 
   const openProfile =
@@ -519,7 +579,7 @@ export default function BookingDetailsScreen() {
                 weight="700"
                 numberOfLines={2}
               >
-                {booking.location}
+                {booking.customerAddress || (booking as any).location || 'الموقع محدد مسبقاً'}
               </Txt>
             </View>
           </View>
@@ -557,7 +617,7 @@ export default function BookingDetailsScreen() {
                 weight="700"
                 numberOfLines={2}
               >
-                {booking.service}
+                {booking.serviceTitle || (booking as any).service || 'طلب صيانة'}
               </Txt>
             </View>
           </View>

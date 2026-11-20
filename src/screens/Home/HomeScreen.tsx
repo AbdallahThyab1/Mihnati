@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   View,
@@ -30,11 +31,13 @@ import TrustBanner from '../../components/TrustBanner';
 import Txt from '../../components/Txt';
 
 import {
-  categories,
-  craftsmen,
+  categories as fallbackCategories,
+  craftsmen as fallbackCraftsmen,
   getCraftsman,
   topReviews,
 } from '../../data/mock';
+import { getCategories, getCraftsmen } from '../../services/craftsmenService';
+import type { Craftsman, ServiceCategory } from '../../types/database';
 
 import {
   card,
@@ -52,6 +55,32 @@ const aiSuggestions: string[] = [
 export default function HomeScreen() {
   const router = useRouter();
   const [query, setQuery] = useState<string>('');
+  const [categoriesList, setCategoriesList] = useState<ServiceCategory[]>(fallbackCategories);
+  const [craftsmenList, setCraftsmenList] = useState<Craftsman[]>(fallbackCraftsmen);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = async () => {
+    try {
+      const [cats, cms] = await Promise.all([
+        getCategories(),
+        getCraftsmen({ limit: 10 }),
+      ]);
+      setCategoriesList(cats);
+      setCraftsmenList(cms);
+    } catch (err) {
+      console.warn('Failed to load home data from Supabase:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
 
   const goToResults = (text: string) => {
     router.push({
@@ -69,6 +98,9 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
       >
         {/* =================================================
             GREETING
@@ -248,7 +280,7 @@ export default function HomeScreen() {
           />
 
           <View style={styles.grid}>
-            {categories.map(
+            {categoriesList.map(
               (category) => (
                 <Pressable
                   key={category.id}
@@ -339,7 +371,7 @@ export default function HomeScreen() {
           />
 
           <View style={styles.nearbyList}>
-            {craftsmen
+            {craftsmenList
               .slice(0, 3)
               .map(
                 (craftsman) => (

@@ -4,8 +4,11 @@ import React, {
     useState,
 } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     Modal,
     Pressable,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     View,
@@ -27,15 +30,14 @@ import {
 import ScreenHeader from '../../components/ScreenHeader';
 import Txt from '../../components/Txt';
 import {
-    getBookings,
-    subscribeBookings,
-    updateBooking,
-    type ServiceBooking,
-} from '../../data/bookings';
-import {
-    getMyServices,
-    type MyService,
-} from '../../data/myServices';
+    getBookings as getDbBookings,
+    cancelBooking as cancelDbBooking,
+    updateBookingStatus as updateDbBookingStatus,
+} from '../../services/bookingsService';
+import { getBookings as getFallbackBookings } from '../../data/bookings';
+import { getMyServices as getDbMyServices } from '../../services/myServicesService';
+import { useAuth } from '../../context/AuthContext';
+import type { BookingStatus, Craftsman, MyService, ServiceBooking } from '../../types/database';
 import { getCraftsman } from '../../data/mock';
 import {
     colors,
@@ -702,16 +704,12 @@ function DetailRow({
 
 export default function BookingsScreen() {
     const router = useRouter();
+    const { user } = useAuth();
 
-    const [bookings, setBookings] =
-        useState<ServiceBooking[]>(
-            getBookings(),
-        );
-
-    const [services, setServices] =
-        useState<MyService[]>(
-            getMyServices(),
-        );
+    const [bookings, setBookings] = useState<ServiceBooking[]>([]);
+    const [services, setServices] = useState<MyService[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const [
         filter,
@@ -727,30 +725,34 @@ export default function BookingsScreen() {
         ServiceBooking | undefined
     >();
 
+    const loadData = async () => {
+        try {
+            const [bList, sList] = await Promise.all([
+                getDbBookings(user ? { customerId: user.id } : undefined),
+                getDbMyServices(user?.id),
+            ]);
+            if (bList.length > 0) {
+                setBookings(bList);
+            } else {
+                setBookings(getFallbackBookings());
+            }
+            setServices(sList);
+        } catch {
+            setBookings(getFallbackBookings());
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const syncBookings = () => {
-            setBookings(getBookings());
-        };
+        loadData();
+    }, [user]);
 
-        const syncServices = () => {
-            setServices(getMyServices());
-        };
-
-        const unsubscribeBookings =
-            subscribeBookings(
-                syncBookings,
-            );
-
-        const unsubscribeServices =
-            subscribeBookings(
-                syncServices,
-            );
-
-        return () => {
-            unsubscribeBookings();
-            unsubscribeServices();
-        };
-    }, []);
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await loadData();
+        setRefreshing(false);
+    };
 
     const linkedServices =
         useMemo(
@@ -900,25 +902,33 @@ export default function BookingsScreen() {
             router.push('/services');
         };
 
-    const cancelSelectedBooking =
-        () => {
-            if (
-                !selectedBooking ||
-                selectedBooking.status !==
-                'confirmed'
-            ) {
-                return;
-            }
+    const cancelSelectedBooking = () => {
+        if (!selectedBooking) return;
 
-            updateBooking(
-                selectedBooking.id,
+        Alert.alert(
+            'إلغاء الحجز',
+            'هل أنت متأكد من رغبتك في إلغاء هذا الموعد؟',
+            [
+                { text: 'تراجع', style: 'cancel' },
                 {
-                    status: 'cancelled',
+                    text: 'تأكيد الإلغاء',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await cancelDbBooking(selectedBooking.id);
+                        setBookings((prev) =>
+                            prev.map((b) =>
+                                b.id === selectedBooking.id
+                                    ? { ...b, status: 'cancelled' }
+                                    : b,
+                            ),
+                        );
+                        closeBooking();
+                        Alert.alert('تم الإلغاء', 'تم إلغاء موعد الحجز بنجاح.');
+                    },
                 },
-            );
-
-            closeBooking();
-        };
+            ],
+        );
+    };
 
     return (
         <View style={styles.screen}>
@@ -928,6 +938,13 @@ export default function BookingsScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={
                     styles.content
+                }
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={colors.primary}
+                    />
                 }
             >
                 <View style={styles.intro}>
